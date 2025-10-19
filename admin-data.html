@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Management - Expedited Freight</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-brand">
+                <h2>🚚 Expedited Freight</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Search Orders</a>
+                <a href="admin-users.html" class="nav-link">User Management</a>
+                <a href="admin-data.html" class="nav-link active">Data Management</a>
+                <span class="nav-user" id="userEmail"></span>
+                <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Data Management</h1>
+            <p>Upload and manage historical orders data</p>
+        </div>
+
+        <div class="admin-grid">
+            <div class="admin-card">
+                <h3>📊 Current Data Stats</h3>
+                <div id="loadingStats" class="loading-message">Loading statistics...</div>
+                <div id="statsContent" style="display: none;">
+                    <div class="stats-list">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Records:</span>
+                            <span class="stat-value" id="totalRecordsCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Oldest Order:</span>
+                            <span class="stat-value" id="oldestOrder">N/A</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Newest Order:</span>
+                            <span class="stat-value" id="newestOrder">N/A</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Last Updated:</span>
+                            <span class="stat-value" id="lastUpdated">N/A</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" id="downloadAllBtn" style="margin-top: 20px;">
+                        📥 Download All Data (CSV)
+                    </button>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3>📤 Upload Orders Data</h3>
+                <p class="card-description">Upload CSV or JSON file from SuperDispatch</p>
+
+                <div class="upload-section">
+                    <input type="file" id="fileInput" accept=".csv,.json" style="display: none;">
+                    <button class="btn btn-secondary" id="selectFileBtn">
+                        📁 Select File
+                    </button>
+                    <div id="fileInfo" style="margin-top: 10px; display: none;">
+                        <p><strong>Selected:</strong> <span id="fileName"></span></p>
+                        <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                    </div>
+                </div>
+
+                <div id="previewSection" style="display: none; margin-top: 20px;">
+                    <h4>Data Preview (First 10 rows)</h4>
+                    <div class="table-container" style="max-height: 300px;">
+                        <table class="data-table" id="previewTable">
+                            <thead id="previewTableHead"></thead>
+                            <tbody id="previewTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Total rows to upload:</strong> <span id="totalRows">0</span></p>
+                </div>
+
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button class="btn btn-primary" id="appendBtn" disabled>
+                        ➕ Append Records
+                    </button>
+                    <button class="btn btn-danger" id="replaceBtn" disabled>
+                        🔄 Replace All Data
+                    </button>
+                </div>
+
+                <div id="uploadProgress" style="display: none; margin-top: 20px;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Uploading... 0%</p>
+                </div>
+
+                <div id="uploadMessage" class="message" style="display: none; margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <div class="admin-card" style="margin-top: 20px;">
+            <h3>📋 CSV Format Requirements</h3>
+            <p>Your CSV file should include the following columns:</p>
+            <ul class="requirements-list">
+                <li><strong>order_id</strong> - Unique identifier from SuperDispatch</li>
+                <li><strong>origin_city</strong> - Origin city and state (e.g., "Los Angeles, CA")</li>
+                <li><strong>destination_city</strong> - Destination city and state (e.g., "New York, NY")</li>
+                <li><strong>carrier</strong> - Carrier name</li>
+                <li><strong>price</strong> - Shipment price (numeric)</li>
+                <li><strong>distance</strong> - Distance in miles (numeric)</li>
+                <li><strong>order_date</strong> - Order date (YYYY-MM-DD format)</li>
+            </ul>
+            <p><em>Note: price_per_mile will be automatically calculated if not provided.</em></p>
+        </div>
+    </main>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Confirm Action</h3>
+                <button class="modal-close" id="closeConfirmModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+                <div class="modal-actions">
+                    <button class="btn btn-danger" id="confirmYes">Yes, Proceed</button>
+                    <button class="btn btn-secondary" id="confirmNo">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/data-management.js"></script>
+</body>
+</html>
