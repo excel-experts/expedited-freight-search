@@ -137,36 +137,8 @@ async function loadUserInfo(user) {
     }
 }
 
-async function checkIsAdmin(userId) {
-    try {
-        console.log('🔍 Checking admin for user:', userId);
-        
-        const { data, error } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .single();
-        
-        console.log('📊 Query result:', { data, error });
-        
-        if (error && error.code !== 'PGRST116') {
-            console.error('❌ Error checking admin status:', error);
-            return false;
-        }
-        
-        const isAdmin = data && data.role === 'admin';
-        console.log('🎯 Is admin?', isAdmin);
-        
-        return isAdmin;
-    } catch (error) {
-        console.error('💥 Exception checking admin status:', error);
-        return false;
-    }
-}
-
-
 // Check if user is admin
-async function checkIsAdmin_original(userId) {
+async function checkIsAdmin(userId) {
     try {
         const { data, error } = await supabase
             .from('user_roles')
