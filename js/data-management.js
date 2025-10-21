@@ -146,33 +146,74 @@ function handleFileSelect(e) {
 
 function parseCSV(csvText) {
     try {
-        const lines = csvText.trim().split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        // Use PapaParse for robust CSV parsing!
+        var results = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true // auto-convert numbers
+        });
 
-        parsedData = [];
-
-        for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-            const row = {};
-
-            headers.forEach((header, index) => {
-                row[header] = values[index] || '';
-            });
-
-            // Calculate price_per_mile if not provided
-            if (!row.price_per_mile && row.price && row.distance) {
-                row.price_per_mile = (parseFloat(row.price) / parseFloat(row.distance)).toFixed(2);
-            }
-
-            parsedData.push(row);
+        if (results.errors.length > 0) {
+            // Handles parse warnings/errors
+            console.error('PapaParse error(s):', results.errors);
+            alert('CSV parse error: ' + results.errors.map(e => e.message).join('; '));
+            return;
         }
 
-        displayPreview();
+        // Store all parsed rows
+        parsedData = results.data;
+
+        // Show mapping/select columns UI (see next step)
+        displayPreviewWithMapping(parsedData);
 
     } catch (error) {
         console.error('Error parsing CSV:', error);
         alert('Error parsing CSV file: ' + error.message);
     }
+}
+
+function displayPreviewWithMapping(dataRows) {
+    if (!dataRows || dataRows.length === 0) return;
+
+    var allHeaders = Object.keys(dataRows[0]);
+    var requiredHeaders = [
+        'order_id', 'origin_city', 'destination_city', 'carrier', 'price', 'distance', 'order_date'
+    ]; // Update as needed!
+
+    // Create checkboxes for column selection (add this HTML to your previewSection)
+    var container = document.getElementById('previewSection');
+    container.innerHTML = '<h4>Select columns to import:</h4>';
+
+    allHeaders.forEach(h => {
+        var checked = requiredHeaders.includes(h) ? 'checked' : '';
+        container.innerHTML += `<label><input type="checkbox" class="csv-col" value="${h}" ${checked}> ${h}</label>`;
+    });
+
+    container.innerHTML += '<hr><h4>Preview (first 10 rows):</h4><table id="previewTable"></table>';
+
+    // Only show preview for checked columns:
+    function renderPreview() {
+        var selectedCols = Array.from(document.getElementsByClassName('csv-col'))
+            .filter(box => box.checked).map(box => box.value);
+
+        var table = document.getElementById('previewTable');
+        var previewRows = dataRows.slice(0, 10);
+
+        table.innerHTML = '<thead><tr>' + selectedCols.map(col => `<th>${col}</th>`).join('') + '</tr></thead><tbody>' +
+            previewRows.map(row => `<tr>${
+                selectedCols.map(col => `<td>${row[col] !== undefined ? row[col] : ''}</td>`).join('')
+            }</tr>`).join('') + '</tbody>';
+    }
+
+    // Re-render preview when columns change
+    Array.from(document.getElementsByClassName('csv-col')).forEach(box => {
+        box.addEventListener('change', renderPreview);
+    });
+
+    renderPreview();
+
+    // Optionally, update parsedData to include only selected columns before upload
+    // Or store selectedCols for future processing!
 }
 
 function parseJSON(jsonText) {
