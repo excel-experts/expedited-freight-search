@@ -143,28 +143,51 @@ function handleFileSelect(e) {
         return;
     }
 }
+// Store selected columns
+let selectedColumns = [];
 
 function parseCSV(csvText) {
     try {
-        // Use PapaParse for robust CSV parsing!
-        var results = Papa.parse(csvText, {
+        // Use PapaParse for robust CSV parsing
+        const results = Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
-            dynamicTyping: true // auto-convert numbers
+            dynamicTyping: false // Keep as strings initially
         });
 
         if (results.errors.length > 0) {
-            // Handles parse warnings/errors
-            console.error('PapaParse error(s):', results.errors);
-            alert('CSV parse error: ' + results.errors.map(e => e.message).join('; '));
+            console.error('PapaParse errors:', results.errors);
+            alert('CSV parse errors detected. Some rows may be skipped.');
+        }
+
+        if (!results.data || results.data.length === 0) {
+            alert('No data found in CSV file');
             return;
         }
 
         // Store all parsed rows
         parsedData = results.data;
 
-        // Show mapping/select columns UI (see next step)
-        displayPreviewWithMapping(parsedData);
+        // Get all available columns
+        const allHeaders = Object.keys(parsedData[0]);
+        
+        // Default columns to select (adjust as needed)
+        const defaultColumns = [
+            'order_id', 'origin_city', 'destination_city', 'carrier', 
+            'price', 'distance', 'order_date'
+        ];
+        
+        // Set selected columns (only include those that exist in the CSV)
+        selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));
+        
+        // If none of the default columns exist, select all columns
+        if (selectedColumns.length === 0) {
+            selectedColumns = allHeaders;
+        }
+
+        // Display column selection and preview
+        displayColumnSelection(allHeaders);
+        displayPreview();
 
     } catch (error) {
         console.error('Error parsing CSV:', error);
@@ -172,49 +195,89 @@ function parseCSV(csvText) {
     }
 }
 
-function displayPreviewWithMapping(dataRows) {
-    if (!dataRows || dataRows.length === 0) return;
-
-    var allHeaders = Object.keys(dataRows[0]);
-    var requiredHeaders = [
-        'order_id', 'origin_city', 'destination_city', 'carrier', 'price', 'distance', 'order_date'
-    ]; // Update as needed!
-
-    // Create checkboxes for column selection (add this HTML to your previewSection)
-    var container = document.getElementById('previewSection');
-    container.innerHTML = '<h4>Select columns to import:</h4>';
-
-    allHeaders.forEach(h => {
-        var checked = requiredHeaders.includes(h) ? 'checked' : '';
-        container.innerHTML += `<label><input type="checkbox" class="csv-col" value="${h}" ${checked}> ${h}</label>`;
-    });
-
-    container.innerHTML += '<hr><h4>Preview (first 10 rows):</h4><table id="previewTable"></table>';
-
-    // Only show preview for checked columns:
-    function renderPreview() {
-        var selectedCols = Array.from(document.getElementsByClassName('csv-col'))
-            .filter(box => box.checked).map(box => box.value);
-
-        var table = document.getElementById('previewTable');
-        var previewRows = dataRows.slice(0, 10);
-
-        table.innerHTML = '<thead><tr>' + selectedCols.map(col => `<th>${col}</th>`).join('') + '</tr></thead><tbody>' +
-            previewRows.map(row => `<tr>${
-                selectedCols.map(col => `<td>${row[col] !== undefined ? row[col] : ''}</td>`).join('')
-            }</tr>`).join('') + '</tbody>';
+function displayColumnSelection(allHeaders) {
+    // Create column selection interface
+    const previewSection = document.getElementById('previewSection');
+    
+    // Check if column selection already exists, if not create it
+    let columnSelectionDiv = document.getElementById('columnSelection');
+    
+    if (!columnSelectionDiv) {
+        columnSelectionDiv = document.createElement('div');
+        columnSelectionDiv.id = 'columnSelection';
+        columnSelectionDiv.style.marginBottom = '20px';
+        
+        // Insert before the preview table
+        previewSection.insertBefore(columnSelectionDiv, previewSection.firstChild);
     }
-
-    // Re-render preview when columns change
-    Array.from(document.getElementsByClassName('csv-col')).forEach(box => {
-        box.addEventListener('change', renderPreview);
+    
+    // Build column selection checkboxes
+    let html = '<h4>Select columns to import:</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">';
+    
+    allHeaders.forEach(header => {
+        const isChecked = selectedColumns.includes(header) ? 'checked' : '';
+        html += `
+            <label style="display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" class="column-checkbox" value="${header}" ${isChecked}>
+                <span>${header}</span>
+            </label>
+        `;
     });
-
-    renderPreview();
-
-    // Optionally, update parsedData to include only selected columns before upload
-    // Or store selectedCols for future processing!
+    
+    html += '</div>';
+    columnSelectionDiv.innerHTML = html;
+    
+    // Add event listeners to checkboxes
+    document.querySelectorAll('.column-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                if (!selectedColumns.includes(e.target.value)) {
+                    selectedColumns.push(e.target.value);
+                }
+            } else {
+                selectedColumns = selectedColumns.filter(col => col !== e.target.value);
+            }
+            displayPreview();
+        });
+    });
 }
+
+function displayPreview() {
+    if (parsedData.length === 0) return;
+    
+    const previewSection = document.getElementById('previewSection');
+    const previewTableHead = document.getElementById('previewTableHead');
+    const previewTableBody = document.getElementById('previewTableBody');
+    
+    // Use selected columns or all columns if none selected
+    const columnsToShow = selectedColumns.length > 0 ? selectedColumns : Object.keys(parsedData[0]);
+    
+    // Display headers
+    previewTableHead.innerHTML = '<tr>' + 
+        columnsToShow.map(col => `<th>${col}</th>`).join('') + 
+        '</tr>';
+    
+    // Display first 10 rows
+    previewTableBody.innerHTML = '';
+    const previewRows = parsedData.slice(0, 10);
+    
+    previewRows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = columnsToShow.map(col => {
+            const value = row[col] !== undefined && row[col] !== null ? row[col] : '';
+            return `<td>${value}</td>`;
+        }).join('');
+        previewTableBody.appendChild(tr);
+    });
+    
+    document.getElementById('totalRows').textContent = parsedData.length.toLocaleString();
+    previewSection.style.display = 'block';
+    
+    // Enable upload buttons
+    document.getElementById('appendBtn').disabled = false;
+    document.getElementById('replaceBtn').disabled = false;
+}
+
 
 function parseJSON(jsonText) {
     try {
@@ -276,65 +339,80 @@ function confirmUpload(mode) {
     document.getElementById('confirmMessage').textContent = message;
     document.getElementById('confirmModal').style.display = 'flex';
 }
-
 async function executeUpload() {
     hideConfirmModal();
-
+    
     // Show progress
     document.getElementById('uploadProgress').style.display = 'block';
     document.getElementById('uploadMessage').style.display = 'none';
     document.getElementById('appendBtn').disabled = true;
     document.getElementById('replaceBtn').disabled = true;
-
+    
     try {
         // If replace mode, delete all existing records first
         if (uploadMode === 'replace') {
             updateProgress(10, 'Deleting existing records...');
-
+            
             const { error: deleteError } = await supabase
                 .from('historical_orders')
                 .delete()
-                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-
+                .neq('id', '00000000-0000-0000-0000-000000000000');
+            
             if (deleteError) throw deleteError;
         }
-
+        
+        // Filter data to only include selected columns
+        const dataToUpload = parsedData.map(row => {
+            const filteredRow = {};
+            selectedColumns.forEach(col => {
+                filteredRow[col] = row[col];
+            });
+            
+            // Calculate price_per_mile if not provided
+            if (!filteredRow.price_per_mile && filteredRow.price && filteredRow.distance) {
+                filteredRow.price_per_mile = (parseFloat(filteredRow.price) / parseFloat(filteredRow.distance)).toFixed(2);
+            }
+            
+            return filteredRow;
+        });
+        
         // Upload in batches of 100 records
         const batchSize = 100;
-        const totalBatches = Math.ceil(parsedData.length / batchSize);
-
+        const totalBatches = Math.ceil(dataToUpload.length / batchSize);
+        
         for (let i = 0; i < totalBatches; i++) {
             const start = i * batchSize;
-            const end = Math.min(start + batchSize, parsedData.length);
-            const batch = parsedData.slice(start, end);
-
+            const end = Math.min(start + batchSize, dataToUpload.length);
+            const batch = dataToUpload.slice(start, end);
+            
             const progress = 10 + Math.floor((i / totalBatches) * 80);
             updateProgress(progress, `Uploading batch ${i + 1} of ${totalBatches}...`);
-
+            
             const { error } = await supabase
                 .from('historical_orders')
                 .insert(batch);
-
+            
             if (error) throw error;
         }
-
+        
         updateProgress(100, 'Upload complete!');
-
+        
         // Show success message
         setTimeout(() => {
             document.getElementById('uploadProgress').style.display = 'none';
-            showMessage(`Successfully uploaded ${parsedData.length} records!`, 'success');
-
+            showMessage(`Successfully uploaded ${dataToUpload.length} records!`, 'success');
+            
             // Reset form
             document.getElementById('fileInput').value = '';
             document.getElementById('fileInfo').style.display = 'none';
             document.getElementById('previewSection').style.display = 'none';
             parsedData = [];
-
+            selectedColumns = [];
+            
             // Reload stats
             loadStats();
         }, 1000);
-
+        
     } catch (error) {
         console.error('Upload error:', error);
         document.getElementById('uploadProgress').style.display = 'none';
@@ -343,6 +421,7 @@ async function executeUpload() {
         document.getElementById('replaceBtn').disabled = false;
     }
 }
+
 
 function updateProgress(percent, text) {
     const progressFill = document.getElementById('progressFill');
