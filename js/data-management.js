@@ -300,35 +300,6 @@ function parseJSON(jsonText) {
     }
 }
 
-function displayPreview() {
-    if (parsedData.length === 0) return;
-
-    const previewSection = document.getElementById('previewSection');
-    const previewTableHead = document.getElementById('previewTableHead');
-    const previewTableBody = document.getElementById('previewTableBody');
-
-    // Display headers
-    const headers = Object.keys(parsedData[0]);
-    previewTableHead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
-
-    // Display first 10 rows
-    previewTableBody.innerHTML = '';
-    const previewRows = parsedData.slice(0, 10);
-
-    previewRows.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = headers.map(h => `<td>${row[h] || ''}</td>`).join('');
-        previewTableBody.appendChild(tr);
-    });
-
-    document.getElementById('totalRows').textContent = parsedData.length.toLocaleString();
-    previewSection.style.display = 'block';
-
-    // Enable upload buttons
-    document.getElementById('appendBtn').disabled = false;
-    document.getElementById('replaceBtn').disabled = false;
-}
-
 function confirmUpload(mode) {
     uploadMode = mode;
 
