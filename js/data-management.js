@@ -321,7 +321,7 @@ async function executeUpload() {
     
     // Show progress
     document.getElementById('uploadProgress').style.display = 'block';
-    document.getElementById('uploadMessage').style.display = 'none';
+    document.getElementById('headerMessage').style.display = 'none';
     document.getElementById('appendBtn').disabled = true;
     document.getElementById('replaceBtn').disabled = true;
     
@@ -503,7 +503,7 @@ async function downloadAllData() {
 }
 
 function showMessage(message, type) {
-    const element = document.getElementById('uploadMessage');
+    const element = document.getElementById('headerMessage');
     element.textContent = message;
     element.className = `message ${type}`;
     element.style.display = 'block';
