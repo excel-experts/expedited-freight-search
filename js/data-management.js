@@ -39,8 +39,8 @@ function init() {
     const confirmYes = document.getElementById('confirmYes');
 
     // New form elements for manual record entry
-    const manualRecordForm = document.getElementById('manualRecordForm');
-    const manualRecordSubmitBtn = document.getElementById('manualRecordSubmitBtn');
+    const manualRecordForm = document.getElementById('manualEntryForm');
+    const manualRecordSubmitBtn = document.getElementById('manualSubmitBtn');
 
     if (selectFileBtn) selectFileBtn.addEventListener('click', () => fileInput.click());
     if (fileInput) fileInput.addEventListener('change', handleFileSelect);
@@ -401,6 +401,7 @@ async function executeUpload() {
 
 // New function to handle manual record form submission
 async function handleManualRecordSubmit(event) {
+    console.log("Made it to handle manual record");
     event.preventDefault();
 
     const form = event.target;
