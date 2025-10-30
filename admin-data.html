@@ -102,6 +102,42 @@
 
                 <div id="uploadMessage" class="message" style="display: none; margin-top: 20px;"></div>
             </div>
+
+            <div class="admin-card" style="margin-top: 20px;">
+                <h3>✍️ Add Record Manually</h3>
+                <form id="manualEntryForm" novalidate>
+                    <div class="form-group">
+                        <label for="order_id">Order ID</label>
+                        <input type="text" id="order_id" name="order_id" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="origin_city">Origin City</label>
+                        <input type="text" id="origin_city" name="origin_city" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="destination_city">Destination City</label>
+                        <input type="text" id="destination_city" name="destination_city" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="carrier">Carrier</label>
+                        <input type="text" id="carrier" name="carrier" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Price</label>
+                        <input type="number" id="price" name="price" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="distance">Distance (miles)</label>
+                        <input type="number" id="distance" name="distance" step="0.1" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="order_date">Order Date</label>
+                        <input type="date" id="order_date" name="order_date" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="manualSubmitBtn">Add Record</button>
+                </form>
+                <div id="manualEntryMessage" class="message" style="margin-top: 10px; display: none;"></div>
+            </div>
         </div>
 
         <div class="admin-card" style="margin-top: 20px;">

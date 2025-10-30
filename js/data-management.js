@@ -38,6 +38,10 @@ function init() {
     const confirmNo = document.getElementById('confirmNo');
     const confirmYes = document.getElementById('confirmYes');
 
+    // New form elements for manual record entry
+    const manualRecordForm = document.getElementById('manualRecordForm');
+    const manualRecordSubmitBtn = document.getElementById('manualRecordSubmitBtn');
+
     if (selectFileBtn) selectFileBtn.addEventListener('click', () => fileInput.click());
     if (fileInput) fileInput.addEventListener('change', handleFileSelect);
     if (appendBtn) appendBtn.addEventListener('click', () => confirmUpload('append'));
@@ -47,6 +51,8 @@ function init() {
     if (closeConfirmModal) closeConfirmModal.addEventListener('click', hideConfirmModal);
     if (confirmNo) confirmNo.addEventListener('click', hideConfirmModal);
     if (confirmYes) confirmYes.addEventListener('click', executeUpload);
+
+    if (manualRecordForm) manualRecordForm.addEventListener('submit', handleManualRecordSubmit);
 
     // Close modal on outside click
     window.addEventListener('click', (e) => {
@@ -390,6 +396,48 @@ async function executeUpload() {
         showMessage('Error uploading data: ' + error.message, 'error');
         document.getElementById('appendBtn').disabled = false;
         document.getElementById('replaceBtn').disabled = false;
+    }
+}
+
+// New function to handle manual record form submission
+async function handleManualRecordSubmit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // Construct record object from form data
+    const record = {};
+    formData.forEach((value, key) => {
+        record[key] = value;
+    });
+
+    // Calculate price_per_mile if price and distance are provided
+    if (record.price && record.distance && !record.price_per_mile) {
+        record.price_per_mile = (parseFloat(record.price) / parseFloat(record.distance)).toFixed(2);
+    }
+
+    try {
+        // Insert the single record into the database
+        const { error } = await supabase
+            .from('historical_orders')
+            .insert([record]);
+
+        if (error) {
+            throw error;
+        }
+
+        showMessage('Record added successfully!', 'success');
+
+        // Reset the form
+        form.reset();
+
+        // Reload stats to reflect new data
+        loadStats();
+
+    } catch (error) {
+        console.error('Error adding record:', error);
+        showMessage('Error adding record: ' + error.message, 'error');
     }
 }
 
