@@ -75,12 +75,14 @@ async function checkAuth() {
 async function handleSearch(e) {
     e.preventDefault();
 
+    const pickupBusiness = document.getElementById('pickupBusiness').value.trim();
+    const deliveryBusiness = document.getElementById('deliveryBusiness').value.trim();
     const originCity = document.getElementById('originCity').value.trim();
     const destinationCity = document.getElementById('destinationCity').value.trim();
     const carrier = document.getElementById('carrier').value.trim();
 
     // At least one field must be filled
-    if (!originCity && !destinationCity && !carrier) {
+    if (!pickupBusiness && !deliveryBusiness && !originCity && !destinationCity && !carrier) {
         alert('Please enter at least one search criteria');
         return;
     }
@@ -94,6 +96,12 @@ async function handleSearch(e) {
         // Build query
         let query = supabase.from('historical_orders').select('*');
 
+        if (pickupBusiness) {
+            query = query.ilike('pickup_business', `%${pickupBusiness}%`);
+        }
+        if (deliveryBusiness) {
+            query = query.ilike('delivery_business', `%${deliveryBusiness}%`);
+        }
         if (originCity) {
             query = query.ilike('origin_city', `%${originCity}%`);
         }
@@ -163,6 +171,8 @@ function displayTablePage() {
 
         row.innerHTML = `
             <td>${order.order_id || 'N/A'}</td>
+            <td>${order.pickup_business || 'N/A'}</td>
+            <td>${order.delivery_business || 'N/A'}</td>
             <td>${order.origin_city || 'N/A'}</td>
             <td>${order.destination_city || 'N/A'}</td>
             <td>${order.carrier || 'N/A'}</td>
@@ -239,7 +249,7 @@ function exportToCSV() {
     if (allResults.length === 0) return;
 
     // Create CSV content
-    const headers = ['Order ID', 'Origin City', 'Destination City', 'Carrier', 'Price', 'Distance', 'Price/Mile', 'Order Date'];
+    const headers = ['Order ID', 'Pickup Business', 'Delivery Business', 'Origin City', 'Destination City', 'Carrier', 'Price', 'Distance', 'Price/Mile', 'Order Date'];
     const csvRows = [headers.join(',')];
 
     allResults.forEach(order => {
@@ -248,6 +258,8 @@ function exportToCSV() {
 
         const row = [
             order.order_id || '',
+            order.pickup_business || '',
+            order.delivery_business || '',
             order.origin_city || '',
             order.destination_city || '',
             order.carrier || '',

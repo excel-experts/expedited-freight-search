@@ -179,7 +179,7 @@ function parseCSV(csvText) {
         
         // Default columns to select (adjust as needed)
         const defaultColumns = [
-            'order_id', 'origin_city', 'destination_city', 'carrier', 
+            'order_id', 'pickup_business', 'delivery_business', 'origin_city', 'destination_city', 'carrier', 
             'price', 'distance', 'order_date'
         ];
         
