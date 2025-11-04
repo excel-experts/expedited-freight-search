@@ -101,13 +101,17 @@
                     <p id="progressText">Uploading... 0%</p>
                 </div>
             </div>
-
+            
             <div class="admin-card">
                 <h3>✍️ Add Record Manually</h3>
                 <form id="manualEntryForm" novalidate>
                     <div class="form-group">
-                        <label for="order_id">Order ID</label>
-                        <input type="text" id="order_id" name="order_id" required>
+                        <label for="pickup_business">Pickup Business</label>
+                        <input type="text" id="pickup_business" name="pickup_business" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="delivery_business">Delivery Business</label>
+                        <input type="text" id="delivery_business" name="delivery_business" required>
                     </div>
                     <div class="form-group">
                         <label for="origin_city">Origin City</label>
@@ -116,10 +120,6 @@
                     <div class="form-group">
                         <label for="destination_city">Destination City</label>
                         <input type="text" id="destination_city" name="destination_city" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="carrier">Carrier</label>
-                        <input type="text" id="carrier" name="carrier" required>
                     </div>
                     <div class="form-group">
                         <label for="price">Price</label>
@@ -144,6 +144,8 @@
             <p>Your CSV file should include the following columns:</p>
             <ul class="requirements-list">
                 <li><strong>order_id</strong> - Unique identifier from SuperDispatch</li>
+                <li><strong>pickup_business</strong> - The business name where the vehicle(s) will be picked up.</li>
+                <li><strong>delivery_business</strong> - The business name where the vehicle(s) will be dropped off.</li>
                 <li><strong>origin_city</strong> - Origin city and state (e.g., "Los Angeles, CA")</li>
                 <li><strong>destination_city</strong> - Destination city and state (e.g., "New York, NY")</li>
                 <li><strong>carrier</strong> - Carrier name</li>
