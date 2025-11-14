@@ -414,14 +414,14 @@ async function handleManualRecordSubmit(event) {
     });
 
     // Calculate price_per_mile if price and distance are provided
-    if (record.price && record.distance && !record.price_per_mile) {
-        record.price_per_mile = (parseFloat(record.price) / parseFloat(record.distance)).toFixed(2);
+    if (record.lo_price && record.distance && !record.price_per_mile) {
+        record.price_per_mile = (parseFloat(record.lo_price) / parseFloat(record.distance)).toFixed(2);
     }
 
     try {
         // Insert the single record into the database
         const { error } = await supabase
-            .from('historical_orders')
+            .from('manual_orders')
             .insert([record]);
 
         if (error) {
