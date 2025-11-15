@@ -30,6 +30,7 @@ function init() {
     // Setup event listeners
     const selectFileBtn = document.getElementById('selectFileBtn');
     const fileInput = document.getElementById('fileInput');
+    const uploadInfoBtn = document.getElementById('uploadInfoBtn');
     const appendBtn = document.getElementById('appendBtn');
     const replaceBtn = document.getElementById('replaceBtn');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
@@ -45,6 +46,7 @@ function init() {
 
     if (selectFileBtn) selectFileBtn.addEventListener('click', () => fileInput.click());
     if (fileInput) fileInput.addEventListener('change', handleFileSelect);
+    if (uploadInfoBtn) uploadInfoBtn.addEventListener('click', showUploadInfo);
     if (appendBtn) appendBtn.addEventListener('click', () => confirmUpload('append'));
     if (replaceBtn) replaceBtn.addEventListener('click', () => confirmUpload('replace'));
     if (downloadAllBtn) downloadAllBtn.addEventListener('click', downloadAllData);
@@ -310,6 +312,11 @@ function parseJSON(jsonText) {
         console.error('Error parsing JSON:', error);
         alert('Error parsing JSON file: ' + error.message);
     }
+}
+
+// Show the Requirements List Modal for Uploading a new CSV
+function showUploadInfo() {
+    document.getElementById('RequireModal').style.display = 'flex';
 }
 
 function confirmUpload(mode) {
