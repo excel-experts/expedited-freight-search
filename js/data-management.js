@@ -330,8 +330,7 @@ function confirmUpload(mode) {
     document.getElementById('confirmModal').style.display = 'flex';
 }
 async function executeUpload() {
-    const modal = document.getElementById('confirmModal')
-    hideConfirmModal(modal);
+    hideModal('confirmModal');
     
     // Show progress
     document.getElementById('uploadProgress').style.display = 'block';
