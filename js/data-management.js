@@ -51,9 +51,9 @@ function init() {
     if (replaceBtn) replaceBtn.addEventListener('click', () => confirmUpload('replace'));
     if (downloadAllBtn) downloadAllBtn.addEventListener('click', downloadAllData);
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-    if (closeRequireModal) closeRequireModal.addEventListener('click', hideModal);
-    if (closeConfirmModal) closeConfirmModal.addEventListener('click', hideModal);
-    if (confirmNo) confirmNo.addEventListener('click', hideModal);
+    if (closeRequireModal) closeRequireModal.addEventListener('click', () => hideModal('requireModal'));
+    if (closeConfirmModal) closeConfirmModal.addEventListener('click', () => hideModal('confirmModal'));
+    if (confirmNo) confirmNo.addEventListener('click', () => hideModal('confirmModal'));
     if (confirmYes) confirmYes.addEventListener('click', executeUpload);
 
     if (manualRecordForm) manualRecordForm.addEventListener('submit', handleManualRecordSubmit);
@@ -63,7 +63,7 @@ function init() {
         // Check if the clicked element has the class "modal"
         if (e.target.classList.contains('modal')) {
             // Call a function to hide the clicked modal
-            hideModal(e.target);
+            hideModal(e.target.id);
         }
     });
 
@@ -316,7 +316,7 @@ function parseJSON(jsonText) {
 
 // Show the Requirements List Modal for Uploading a new CSV
 function showUploadInfo() {
-    document.getElementById('RequireModal').style.display = 'flex';
+    document.getElementById('requireModal').style.display = 'flex';
 }
 
 function confirmUpload(mode) {
@@ -527,7 +527,8 @@ function showMessage(message, type) {
     }, 5000);
 }
 
-function hideModal(modal) {
+function hideModal(modal_name) {
+    const modal = document.getElementById(modal_name);
     modal.style.display = 'none';
 }
 
