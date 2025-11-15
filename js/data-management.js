@@ -388,9 +388,9 @@ async function executeUpload() {
                     newRow[dbField] = row[csvCol];
                 }
             }
-            // Calculate pricepermile if not present:
-            if (!newRow.pricepermile && newRow.price && newRow.distance) {
-                newRow.pricepermile = (parseFloat(newRow.price) / parseFloat(newRow.distance)).toFixed(2);
+            // Calculate price_per_mile if not present:
+            if (!newRow.price_per_mile && newRow.price && newRow.distance) {
+                newRow.price_per_mile = (parseFloat(newRow.price) / parseFloat(newRow.distance)).toFixed(2);
             }
             return newRow;
         });
