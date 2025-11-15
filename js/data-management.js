@@ -160,6 +160,13 @@ function handleFileSelect(e) {
 // Store selected columns
 let selectedColumns = [];
 
+// Store csv-to-db mapped columns
+let columnMapping = {};
+
+function resetColumnMapping() {
+    columnMapping = {};
+}
+
 function parseCSV(csvText) {
     try {
         // Use PapaParse for robust CSV parsing
@@ -268,7 +275,7 @@ function displayPreview() {
     
     // Display headers
     previewTableHead.innerHTML = '<tr>' + 
-        columnsToShow.map(col => `<th>${col}<br/><select>
+        columnsToShow.map(col => `<th>${col}<br/><select data-csv-col="${col}">
                     <option value="">map column</option>
                     <option value="order_id">order_id</option>
                     <option value="pickup_business">pickup_business</option>
@@ -282,6 +289,15 @@ function displayPreview() {
                 </select></th>`).join('') + 
         '</tr>';
     
+    // Add event listeners to all selects after rendering
+    document.querySelectorAll('select[data-csv-col]').forEach(select => {
+        select.addEventListener('change', function() {
+            const csvCol = this.getAttribute('data-csv-col');
+            const dbField = this.value;
+            columnMapping[csvCol] = dbField;
+        });
+    });
+
     // Display first 10 rows
     previewTableBody.innerHTML = '';
     const previewRows = parsedData.slice(0, 10);
@@ -362,6 +378,24 @@ async function executeUpload() {
             if (deleteError) throw deleteError;
         }
         
+
+            // Map CSV columns to database fields using global columnMapping
+        const dataToUpload = parsedData.map(row => {
+            let newRow = {};
+            for (let csvCol in columnMapping) {
+                const dbField = columnMapping[csvCol];
+                if (dbField && row[csvCol] !== undefined) {
+                    newRow[dbField] = row[csvCol];
+                }
+            }
+            // Calculate pricepermile if not present:
+            if (!newRow.pricepermile && newRow.price && newRow.distance) {
+                newRow.pricepermile = (parseFloat(newRow.price) / parseFloat(newRow.distance)).toFixed(2);
+            }
+            return newRow;
+        });
+
+        /*
         // Filter data to only include selected columns
         const dataToUpload = parsedData.map(row => {
             const filteredRow = {};
@@ -376,6 +410,8 @@ async function executeUpload() {
             
             return filteredRow;
         });
+        */
+
         
         // Upload in batches of 100 records
         const batchSize = 100;
