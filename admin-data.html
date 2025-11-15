@@ -60,7 +60,7 @@
             </div>
 
             <div class="admin-card">
-                <h3>📤 Upload Orders Data</h3>
+                <h3>📤 Upload Orders Data <span class="info-icon" id="uploadRequirementsInfo">ℹ️</span></h3>
                 <p class="card-description">Upload CSV or JSON file from SuperDispatch</p>
 
                 <div class="upload-section">
@@ -151,21 +151,29 @@
             </div>
         </div>
 
-        <div class="admin-card" style="margin-top: 20px;">
-            <h3>📋 CSV Format Requirements</h3>
-            <p>Your CSV file should include the following columns:</p>
-            <ul class="requirements-list">
-                <li><strong>order_id</strong> - Unique identifier from SuperDispatch</li>
-                <li><strong>pickup_business</strong> - The business name where the vehicle(s) will be picked up.</li>
-                <li><strong>delivery_business</strong> - The business name where the vehicle(s) will be dropped off.</li>
-                <li><strong>origin_city</strong> - Origin city and state (e.g., "Los Angeles, CA")</li>
-                <li><strong>destination_city</strong> - Destination city and state (e.g., "New York, NY")</li>
-                <li><strong>carrier</strong> - Carrier name</li>
-                <li><strong>price</strong> - Shipment price (numeric)</li>
-                <li><strong>distance</strong> - Distance in miles (numeric)</li>
-                <li><strong>order_date</strong> - Order date (YYYY-MM-DD format)</li>
-            </ul>
-            <p><em>Note: price_per_mile will be automatically calculated if not provided.</em></p>
+    <!-- Requirements Modal -->
+        <div id="requireModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📋 CSV Format Requirements</h3>
+                    <button class="modal-close" id="closeRequireModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Your CSV file should include the following columns:</p>
+                    <ul class="requirements-list">
+                        <li><strong>order_id</strong> - Unique identifier from SuperDispatch</li>
+                        <li><strong>pickup_business</strong> - The business name where the vehicle(s) will be picked up.</li>
+                        <li><strong>delivery_business</strong> - The business name where the vehicle(s) will be dropped off.</li>
+                        <li><strong>origin_city</strong> - Origin city and state (e.g., "Los Angeles, CA")</li>
+                        <li><strong>destination_city</strong> - Destination city and state (e.g., "New York, NY")</li>
+                        <li><strong>carrier</strong> - Carrier name</li>
+                        <li><strong>price</strong> - Shipment price (numeric)</li>
+                        <li><strong>distance</strong> - Distance in miles (numeric)</li>
+                        <li><strong>order_date</strong> - Order date (YYYY-MM-DD format)</li>
+                    </ul>
+                    <p><em>Note: price_per_mile will be automatically calculated if not provided.</em></p>
+                </div>
+            </div>
         </div>
     </main>
 

@@ -33,7 +33,8 @@ function init() {
     const appendBtn = document.getElementById('appendBtn');
     const replaceBtn = document.getElementById('replaceBtn');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutBtn = document.getElementById('logoutBtn');    
+    const closeRequireModal = document.getElementById('closeRequireModal');
     const closeConfirmModal = document.getElementById('closeConfirmModal');
     const confirmNo = document.getElementById('confirmNo');
     const confirmYes = document.getElementById('confirmYes');
@@ -48,17 +49,22 @@ function init() {
     if (replaceBtn) replaceBtn.addEventListener('click', () => confirmUpload('replace'));
     if (downloadAllBtn) downloadAllBtn.addEventListener('click', downloadAllData);
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-    if (closeConfirmModal) closeConfirmModal.addEventListener('click', hideConfirmModal);
-    if (confirmNo) confirmNo.addEventListener('click', hideConfirmModal);
+    if (closeRequireModal) closeRequireModal.addEventListener('click', hideModal);
+    if (closeConfirmModal) closeConfirmModal.addEventListener('click', hideModal);
+    if (confirmNo) confirmNo.addEventListener('click', hideModal);
     if (confirmYes) confirmYes.addEventListener('click', executeUpload);
 
     if (manualRecordForm) manualRecordForm.addEventListener('submit', handleManualRecordSubmit);
 
     // Close modal on outside click
     window.addEventListener('click', (e) => {
-        const modal = document.getElementById('confirmModal');
-        if (e.target === modal) hideConfirmModal();
+        // Check if the clicked element has the class "modal"
+        if (e.target.classList.contains('modal')) {
+            // Call a function to hide the clicked modal
+            hideModal(e.target);
+        }
     });
+
 }
 
 async function checkAuthAndAdmin() {
@@ -317,7 +323,8 @@ function confirmUpload(mode) {
     document.getElementById('confirmModal').style.display = 'flex';
 }
 async function executeUpload() {
-    hideConfirmModal();
+    const modal = document.getElementById('confirmModal')
+    hideConfirmModal(modal);
     
     // Show progress
     document.getElementById('uploadProgress').style.display = 'block';
@@ -513,8 +520,8 @@ function showMessage(message, type) {
     }, 5000);
 }
 
-function hideConfirmModal() {
-    document.getElementById('confirmModal').style.display = 'none';
+function hideModal(modal) {
+    modal.style.display = 'none';
 }
 
 async function handleLogout() {
