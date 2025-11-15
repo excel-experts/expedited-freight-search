@@ -232,18 +232,7 @@ function displayColumnSelection(allHeaders) {
         const isChecked = selectedColumns.includes(header) ? 'checked' : '';
         html += `
             <label style="display: flex; align-items: center; gap: 5px;">
-                <input type="checkbox" class="column-checkbox" value="${header}" ${isChecked}>
-                <select>
-                    <option value="order_id">order_id</option>
-                    <option value="pickup_business">pickup_business</option>
-                    <option value="delivery_business">delivery_business</option>
-                    <option value="origin_city">origin_city</option>
-                    <option value="destination_city">destination_city</option>
-                    <option value="carrier">carrier</option>
-                    <option value="price">price</option>
-                    <option value="distance">distance</option>
-                    <option value="order_date">order_date</option>
-                </select>
+                <input type="checkbox" class="column-checkbox" value="${header}" ${isChecked}>               
                 <span>${header}</span>
             </label>
         `;
@@ -279,7 +268,18 @@ function displayPreview() {
     
     // Display headers
     previewTableHead.innerHTML = '<tr>' + 
-        columnsToShow.map(col => `<th>${col}</th>`).join('') + 
+        columnsToShow.map(col => `<th>${col}<br/><select>
+                    <option value="">map column</option>
+                    <option value="order_id">order_id</option>
+                    <option value="pickup_business">pickup_business</option>
+                    <option value="delivery_business">delivery_business</option>
+                    <option value="origin_city">origin_city</option>
+                    <option value="destination_city">destination_city</option>
+                    <option value="carrier">carrier</option>
+                    <option value="price">price</option>
+                    <option value="distance">distance</option>
+                    <option value="order_date">order_date</option>
+                </select></th>`).join('') + 
         '</tr>';
     
     // Display first 10 rows
