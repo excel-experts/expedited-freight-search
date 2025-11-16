@@ -110,7 +110,7 @@ async function loadStats() {
 
     // Fetch blank counts via RPC call
     const { data: blankCounts, error: blankCountsError } = await supabase
-      .rpc('get_blank_counts');
+      .rpc('get_stat_counts');
 
     if (blankCountsError) throw blankCountsError;
 
