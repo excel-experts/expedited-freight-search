@@ -200,12 +200,12 @@ function parseCSV(csvText) {
         
         // Set selected columns (only include those that exist in the CSV)
         selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));
-        
+        /*
         // If none of the default columns exist, select all columns
         if (selectedColumns.length === 0) {
             selectedColumns = allHeaders;
         }
-
+        */
         // Display column selection and preview
         displayColumnSelection(allHeaders);
         displayPreview();
