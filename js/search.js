@@ -94,7 +94,7 @@ async function handleSearch(e) {
 
     try {
         // Build query
-        let query = supabase.from('historical_orders').select('*');
+        let query = supabase.from('historical_order_rollup').select('*');
 
         if (pickupBusiness) {
             query = query.ilike('pickup_business', `%${pickupBusiness}%`);
