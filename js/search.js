@@ -166,10 +166,9 @@ function displayResults() {
 
     // Update metrics
     document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
-    document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2);
-    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2);
-    document.getElementById('avgPrice').textContent = '$' + avgPrice.toFixed(2);
-    document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2);
+    document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2) + ' / ' + loPriceCount.toLocaleString();
+    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2)+ ' / ' + hiPriceCount.toLocaleString();;
+    document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2) + ' / 0';
 
     // Display table
     displayTablePage();
