@@ -100,39 +100,35 @@ async function loadStats() {
   document.getElementById('statsContent').style.display = 'none';
 
   try {
-    // Existing data fetch
-    const { data: ordersData, error: ordersError, count: totalCount } = await supabase
-      .from('historical_orders')
-      .select('order_date, updated_at', { count: 'exact' })
-      .order('order_date', { ascending: false });
 
-    if (ordersError) throw ordersError;
-
-    // Fetch blank counts via RPC call
+    // Fetch counts via RPC call
     const { data: blankCounts, error: blankCountsError } = await supabase
       .rpc('get_stat_counts');
 
-    if (blankCountsError) throw blankCountsError;
+    if (blankCountsError){
+         throw blankCountsError;
+    } else if (blankCounts && blankCounts.length > 0) {
+        document.getElementById('totalRecordsCount').textContent = blankCounts[0].total_order_count.toLocaleString();
+        document.getElementById('blankCarrierCount').textContent = blankCounts[0].blank_carrier_count.toLocaleString();
+        document.getElementById('blankOrderIdCount').textContent = blankCounts[0].blank_order_id_count.toLocaleString();
+        document.getElementById('blankPriceCount').textContent = blankCounts[0].blank_price_count.toLocaleString();    
+    }
+    
+    // Fetch dates
+    const { data: ordersData, error:ordersError } = await supabase
+    .from('historical_orders')
+    .select('order_date.max(), updated_at.max()');
 
-    const totalRecords = totalCount || 0;
-    const newestOrder = ordersData && ordersData.length > 0 && ordersData[0].order_date ?
-      new Date(ordersData[0].order_date).toLocaleDateString() : 'N/A';
+    if (ordersError) {
+        throw ordersError;
+    } else if (ordersData && ordersData.length > 0) {
 
-    const oldestOrder = ordersData && ordersData.length > 0 && ordersData[ordersData.length - 1].order_date ?
-      new Date(ordersData[ordersData.length - 1].order_date).toLocaleDateString() : 'N/A';
-
-    const lastUpdated = ordersData && ordersData.length > 0 && ordersData[0].updated_at ?
-      new Date(ordersData[0].updated_at).toLocaleString() : 'N/A';
-
-    document.getElementById('totalRecordsCount').textContent = totalRecords.toLocaleString();
-    document.getElementById('oldestOrder').textContent = oldestOrder;
-    document.getElementById('newestOrder').textContent = newestOrder;
-    document.getElementById('lastUpdated').textContent = lastUpdated;
-
-    // Display counts of blanks
-    document.getElementById('blankCarrierCount').textContent = blankCounts[0].blank_carrier_count.toLocaleString();
-    document.getElementById('blankOrderIdCount').textContent = blankCounts[0].blank_order_id_count.toLocaleString();
-    document.getElementById('blankPriceCount').textContent = blankCounts[0].blank_price_count.toLocaleString();
+        const maxOrderDate = ordersData[0].order_date ? new Date(ordersData[0].order_date).toLocaleDateString() : 'N/A';
+        const maxUpdatedAt = ordersData[0].updated_at ? new Date(ordersData[0].updated_at).toLocaleString() : 'N/A';
+        
+        document.getElementById('newestOrder').textContent = maxOrderDate;
+        document.getElementById('lastUpdated').textContent = maxUpdatedAt;
+    }
 
     document.getElementById('loadingStats').style.display = 'none';
     document.getElementById('statsContent').style.display = 'block';
