@@ -176,6 +176,7 @@ function displayTablePage() {
             <td>${order.origin_city || 'N/A'}</td>
             <td>${order.destination_city || 'N/A'}</td>
             <td>${order.carrier || 'N/A'}</td>
+            <td>$${parseInt(order.vehicle_cnt || 0, 10)}</td>
             <td>$${parseFloat(order.price || 0).toFixed(2)}</td>
             <td>${parseFloat(order.distance || 0).toFixed(2)}</td>
             <td>$${pricePerMile}</td>
@@ -249,7 +250,7 @@ function exportToCSV() {
     if (allResults.length === 0) return;
 
     // Create CSV content
-    const headers = ['Order ID', 'Pickup Business', 'Delivery Business', 'Origin City', 'Destination City', 'Carrier', 'Price', 'Distance', 'Price/Mile', 'Order Date'];
+    const headers = ['Order ID', 'Pickup Business', 'Delivery Business', 'Origin City', 'Destination City', 'Carrier', 'Veh. Cnt', 'Price', 'Distance', 'Price/Mile', 'Order Date'];
     const csvRows = [headers.join(',')];
 
     allResults.forEach(order => {
@@ -263,6 +264,7 @@ function exportToCSV() {
             order.origin_city || '',
             order.destination_city || '',
             order.carrier || '',
+            order.vehicle_cnt || '0',
             order.price || '0',
             order.distance || '0',
             pricePerMile,
