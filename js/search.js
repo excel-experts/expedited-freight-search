@@ -176,7 +176,7 @@ function displayTablePage() {
             <td>${order.origin_city || 'N/A'}</td>
             <td>${order.destination_city || 'N/A'}</td>
             <td>${order.carrier || 'N/A'}</td>
-            <td>$${parseInt(order.vehicle_cnt || 0, 10)}</td>
+            <td>${parseInt(order.vehicle_cnt || 0, 10)}</td>
             <td>$${parseFloat(order.price || 0).toFixed(2)}</td>
             <td>${parseFloat(order.distance || 0).toFixed(2)}</td>
             <td>$${pricePerMile}</td>
