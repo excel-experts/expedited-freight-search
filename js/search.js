@@ -133,20 +133,43 @@ async function handleSearch(e) {
     }
 }
 
-function displayResults() {
+function displayResults() {   
+
     // Calculate metrics
     const totalRecords = allResults.length;
-    const totalPrice = allResults.reduce((sum, order) => sum + (parseFloat(order.price) || 0), 0);
-    const totalDistance = allResults.reduce((sum, order) => sum + (parseFloat(order.distance) || 0), 0);
+
+    // Separate sums and counts for loPrice and hiPrice orders
+    let loPriceSum = 0;
+    let loPriceCount = 0;
+    let hiPriceSum = 0;
+    let hiPriceCount = 0;
+
+    allResults.forEach(order => {
+    const price = parseFloat(order.price) || 0;
+    const vehicleCnt = parseInt(order.vehicle_cnt, 10) || 0;
+    if (vehicleCnt <= 3) {
+        loPriceSum += price;
+        loPriceCount += 1;
+    } else if (vehicleCnt >= 4) {
+        hiPriceSum += price;
+        hiPriceCount += 1;
+    }
+    });
+
+    const totalPrice = loPriceSum + hiPriceSum;
     const avgPrice = totalRecords > 0 ? totalPrice / totalRecords : 0;
-    const avgDistance = totalRecords > 0 ? totalDistance / totalRecords : 0;
-    const avgPricePerMile = avgDistance > 0 ? avgPrice / avgDistance : 0;
+    const avgLoPrice = loPriceCount > 0 ? loPriceSum / loPriceCount : 0;
+    const avgHiPrice = hiPriceCount > 0 ? hiPriceSum / hiPriceCount : 0;
+
+    // If you use avgInopPrice, update its logic accordingly or remove if not needed
+    const avgInopPrice = 0; // Replace with proper calculation if needed
 
     // Update metrics
     document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
+    document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2);
+    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2);
     document.getElementById('avgPrice').textContent = '$' + avgPrice.toFixed(2);
-    document.getElementById('avgDistance').textContent = avgDistance.toFixed(2) + ' mi';
-    document.getElementById('avgPricePerMile').textContent = '$' + avgPricePerMile.toFixed(2);
+    document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2);
 
     // Display table
     displayTablePage();
