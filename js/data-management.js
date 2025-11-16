@@ -233,7 +233,7 @@ function displayColumnSelection(allHeaders) {
     }
     
     // Build column selection checkboxes
-    let html = '<h4>Select columns to import:</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">';
+    let html = '<h4>Step 1. Select all columns to import:</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">';
     
     allHeaders.forEach(header => {
         const isChecked = selectedColumns.includes(header) ? 'checked' : '';
@@ -285,6 +285,7 @@ function displayPreview() {
                     <option value="carrier">carrier</option>
                     <option value="price">price</option>
                     <option value="distance">distance</option>
+                    <option value="price_per_mile">price_per_mile</option>
                     <option value="order_date">order_date</option>
                 </select></th>`).join('') + 
         '</tr>';
