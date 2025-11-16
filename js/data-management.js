@@ -113,8 +113,8 @@ async function loadStats() {
         document.getElementById('blankOrderIdCount').textContent = blankCounts[0].blank_order_id_count.toLocaleString();
         document.getElementById('blankPriceCount').textContent = blankCounts[0].blank_price_count.toLocaleString();    
         
-        const maxOrderDate = data[0].max_order_date ? new Date(data[0].max_order_date).toLocaleDateString() : 'N/A';
-        const maxUpdatedAt = data[0].max_updated_at ? new Date(data[0].max_updated_at).toLocaleString() : 'N/A';
+        const maxOrderDate = blankCounts[0].max_order_date ? new Date(blankCounts[0].max_order_date).toLocaleDateString() : 'N/A';
+        const maxUpdatedAt = blankCounts[0].max_updated_at ? new Date(blankCounts[0].max_updated_at).toLocaleString() : 'N/A';
 
         document.getElementById('newestOrder').textContent = maxOrderDate;
         document.getElementById('lastUpdated').textContent = maxUpdatedAt;
