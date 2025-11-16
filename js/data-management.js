@@ -95,41 +95,55 @@ async function checkAuthAndAdmin() {
     // Load statistics
     await loadStats();
 }
-
 async function loadStats() {
-    document.getElementById('loadingStats').style.display = 'block';
-    document.getElementById('statsContent').style.display = 'none';
+  document.getElementById('loadingStats').style.display = 'block';
+  document.getElementById('statsContent').style.display = 'none';
 
-    try {
-        const { data, error, count } = await supabase
-            .from('historical_orders')
-            .select('order_date, updated_at', { count: 'exact' })
-            .order('order_date', { ascending: false });
+  try {
+    // Existing data fetch
+    const { data: ordersData, error: ordersError, count: totalCount } = await supabase
+      .from('historical_orders')
+      .select('order_date, updated_at', { count: 'exact' })
+      .order('order_date', { ascending: false });
 
-        if (error) throw error;
+    if (ordersError) throw ordersError;
 
-        const totalRecords = count || 0;
-        const newestOrder = data && data.length > 0 && data[0].order_date ? 
-            new Date(data[0].order_date).toLocaleDateString() : 'N/A';
-        const oldestOrder = data && data.length > 0 && data[data.length - 1].order_date ? 
-            new Date(data[data.length - 1].order_date).toLocaleDateString() : 'N/A';
-        const lastUpdated = data && data.length > 0 && data[0].updated_at ? 
-            new Date(data[0].updated_at).toLocaleString() : 'N/A';
+    // Fetch blank counts via RPC call
+    const { data: blankCounts, error: blankCountsError } = await supabase
+      .rpc('get_blank_counts');
 
-        document.getElementById('totalRecordsCount').textContent = totalRecords.toLocaleString();
-        document.getElementById('oldestOrder').textContent = oldestOrder;
-        document.getElementById('newestOrder').textContent = newestOrder;
-        document.getElementById('lastUpdated').textContent = lastUpdated;
+    if (blankCountsError) throw blankCountsError;
 
-        document.getElementById('loadingStats').style.display = 'none';
-        document.getElementById('statsContent').style.display = 'block';
+    const totalRecords = totalCount || 0;
+    const newestOrder = ordersData && ordersData.length > 0 && ordersData[0].order_date ?
+      new Date(ordersData[0].order_date).toLocaleDateString() : 'N/A';
 
-    } catch (error) {
-        console.error('Error loading stats:', error);
-        document.getElementById('loadingStats').style.display = 'none';
-        showMessage('Error loading statistics: ' + error.message, 'error');
-    }
+    const oldestOrder = ordersData && ordersData.length > 0 && ordersData[ordersData.length - 1].order_date ?
+      new Date(ordersData[ordersData.length - 1].order_date).toLocaleDateString() : 'N/A';
+
+    const lastUpdated = ordersData && ordersData.length > 0 && ordersData[0].updated_at ?
+      new Date(ordersData[0].updated_at).toLocaleString() : 'N/A';
+
+    document.getElementById('totalRecordsCount').textContent = totalRecords.toLocaleString();
+    document.getElementById('oldestOrder').textContent = oldestOrder;
+    document.getElementById('newestOrder').textContent = newestOrder;
+    document.getElementById('lastUpdated').textContent = lastUpdated;
+
+    // Display counts of blanks
+    document.getElementById('blankCarrierCount').textContent = blankCounts[0].blank_carrier_count.toLocaleString();
+    document.getElementById('blankOrderIdCount').textContent = blankCounts[0].blank_order_id_count.toLocaleString();
+    document.getElementById('blankPriceCount').textContent = blankCounts[0].blank_price_count.toLocaleString();
+
+    document.getElementById('loadingStats').style.display = 'none';
+    document.getElementById('statsContent').style.display = 'block';
+
+  } catch (error) {
+    console.error('Error loading stats:', error);
+    document.getElementById('loadingStats').style.display = 'none';
+    showMessage('Error loading statistics: ' + error.message, 'error');
+  }
 }
+
 
 function handleFileSelect(e) {
     const file = e.target.files[0];
