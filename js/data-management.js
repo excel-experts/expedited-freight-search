@@ -166,14 +166,12 @@ let columnMapping = {};
 function resetColumnMapping() {
     columnMapping = {};
 }
-
 function parseCSV(csvText) {
     try {
-        // Use PapaParse for robust CSV parsing
         const results = Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
-            dynamicTyping: false // Keep as strings initially
+            dynamicTyping: false
         });
 
         if (results.errors.length > 0) {
@@ -186,27 +184,60 @@ function parseCSV(csvText) {
             return;
         }
 
-        // Store all parsed rows
         parsedData = results.data;
-
-        // Get all available columns
         const allHeaders = Object.keys(parsedData[0]);
         
-        // Default columns to select (adjust as needed)
+        // Database column names (what your DB expects)
         const defaultColumns = [
-            'order_id', 'pickup_business', 'delivery_business', 'origin_city', 'destination_city', 'carrier', 
-            'price', 'distance', 'order_date'
+            'order_id', 'pickup_business', 'delivery_business', 'origin_city', 
+            'destination_city', 'carrier', 'price', 'distance', 'order_date'
         ];
         
-        // Set selected columns (only include those that exist in the CSV)
-        selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));
-        /*
-        // If none of the default columns exist, select all columns
-        if (selectedColumns.length === 0) {
-            selectedColumns = allHeaders;
+        // Map display names (variations users might use) to database column names
+        const displayNameMapping = {
+            'order_id': ['order id', 'orderid', 'order #', 'order number', 'id'],
+            'pickup_business': ['pickup business', 'pickup', 'origin business', 'shipper'],
+            'delivery_business': ['delivery business', 'delivery', 'destination business', 'consignee', 'receiver'],
+            'origin_city': ['origin city', 'origin', 'pickup city', 'from city', 'source city'],
+            'destination_city': ['destination city', 'destination', 'delivery city', 'to city', 'dest city'],
+            'carrier': ['carrier', 'carrier name', 'shipping carrier', 'transport company'],
+            'price': ['price', 'cost', 'amount', 'total', 'rate'],
+            'distance': ['distance', 'miles', 'mileage', 'mi'],
+            'order_date': ['order date', 'date', 'order_date', 'created date', 'ship date']
+        };
+        
+        // Create reverse lookup: display name -> database column
+        const displayToDbColumn = {};
+        for (const [dbColumn, displayNames] of Object.entries(displayNameMapping)) {
+            // Add the exact db column name first
+            displayToDbColumn[dbColumn.toLowerCase()] = dbColumn;
+            // Add all display name variations
+            displayNames.forEach(displayName => {
+                displayToDbColumn[displayName.toLowerCase()] = dbColumn;
+            });
         }
-        */
-        // Display column selection and preview
+        
+        // Map CSV headers to database columns
+        selectedColumns = allHeaders
+            .map(header => {
+                const normalized = header.toLowerCase().trim();
+                return displayToDbColumn[normalized] || null;
+            })
+            .filter(col => col !== null && defaultColumns.includes(col));
+        
+        // Remove duplicates in case multiple CSV columns map to same DB column
+        selectedColumns = [...new Set(selectedColumns)];
+        
+        // Store the mapping for later use in upload
+        window.csvToDbMapping = {};
+        allHeaders.forEach(header => {
+            const normalized = header.toLowerCase().trim();
+            const dbColumn = displayToDbColumn[normalized];
+            if (dbColumn) {
+                window.csvToDbMapping[header] = dbColumn;
+            }
+        });
+        
         displayColumnSelection(allHeaders);
         displayPreview();
 
@@ -215,6 +246,7 @@ function parseCSV(csvText) {
         alert('Error parsing CSV file: ' + error.message);
     }
 }
+
 
 function displayColumnSelection(allHeaders) {
     // Create column selection interface
@@ -281,8 +313,13 @@ function displayPreview() {
                     <option value="pickup_business">pickup_business</option>
                     <option value="delivery_business">delivery_business</option>
                     <option value="origin_city">origin_city</option>
+                    <option value="origin_state">origin_state</option>
+                    <option value="origin_zip">origin_zip</option>
                     <option value="destination_city">destination_city</option>
+                    <option value="destination_state">destination_state</option>
+                    <option value="destination_zip">destination_zip</option>
                     <option value="carrier">carrier</option>
+                    <option value="inop_info">inop_info</option>
                     <option value="price">price</option>
                     <option value="distance">distance</option>
                     <option value="price_per_mile">price_per_mile</option>

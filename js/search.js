@@ -78,12 +78,17 @@ async function handleSearch(e) {
     const pickupBusiness = document.getElementById('pickupBusiness').value.trim();
     const deliveryBusiness = document.getElementById('deliveryBusiness').value.trim();
     const originCity = document.getElementById('originCity').value.trim();
+    const originState = document.getElementById('originState').value.trim();
+    const originZip = document.getElementById('originZip').value.trim();
     const destinationCity = document.getElementById('destinationCity').value.trim();
+    const destinationState = document.getElementById('destinationState').value.trim();
+    const destinationZip = document.getElementById('destinationZip').value.trim();
     const carrier = document.getElementById('carrier').value.trim();
+    const inopInfo = document.getElementById('inopInfo').value.trim();
 
     // At least one field must be filled
     if (!pickupBusiness && !deliveryBusiness && !originCity && !destinationCity && !carrier) {
-        alert('Please enter at least one search criteria');
+        alert('Please enter at least one required search criteria');
         return;
     }
 
@@ -105,11 +110,26 @@ async function handleSearch(e) {
         if (originCity) {
             query = query.ilike('origin_city', `%${originCity}%`);
         }
+        if (originState) {
+            query = query.ilike('origin_State', `%${originState}%`);
+        }
+        if (originZip) {
+            query = query.ilike('origin_Zip', `%${originZip}%`);
+        }
         if (destinationCity) {
             query = query.ilike('destination_city', `%${destinationCity}%`);
         }
+        if (destinationState) {
+            query = query.ilike('destination_zip', `%${destinationState}%`);
+        }
+        if (destinationZip) {
+            query = query.ilike('destination_Zip', `%${destinationZip}%`);
+        }
         if (carrier) {
             query = query.ilike('carrier', `%${carrier}%`);
+        }
+        if (inopInfo) {
+            query = query.ilike('inop_info', `%${inopInfo}%`);
         }
 
         const { data, error } = await query;
@@ -194,10 +214,11 @@ function displayTablePage() {
         row.innerHTML = `
             <td>${order.order_id || 'N/A'}</td>
             <td>${order.pickup_business || 'N/A'}</td>
+            <td>${order.origin_city || ''}, ${order.origin_state || ''} ${order.origin_zip || ''}</td>
             <td>${order.delivery_business || 'N/A'}</td>
-            <td>${order.origin_city || 'N/A'}</td>
-            <td>${order.destination_city || 'N/A'}</td>
+            <td>${order.destination_city || ''}, ${order.destination_state || ''} ${order.destination_zip || ''}</td>
             <td>${order.carrier || 'N/A'}</td>
+            <td>${order.inop_info || 'N/A'}</td>
             <td>${parseInt(order.vehicle_cnt || 0, 10)}</td>
             <td>$${parseFloat(order.price || 0).toFixed(2)}</td>
             <td>${parseFloat(order.distance || 0).toFixed(2)}</td>
@@ -272,7 +293,7 @@ function exportToCSV() {
     if (allResults.length === 0) return;
 
     // Create CSV content
-    const headers = ['Order ID', 'Pickup Business', 'Delivery Business', 'Origin City', 'Destination City', 'Carrier', 'Veh. Cnt', 'Price', 'Distance', 'Price/Mile', 'Order Date'];
+    const headers = ['Order ID', 'Pickup Business', 'Location', 'Delivery Business', 'Location', 'Carrier', 'INOP', 'Veh. Cnt', 'Price', 'Distance', 'Price/Mile', 'Order Date'];
     const csvRows = [headers.join(',')];
 
     allResults.forEach(order => {
@@ -282,10 +303,11 @@ function exportToCSV() {
         const row = [
             order.order_id || '',
             order.pickup_business || '',
+            [order.origin_city, order.origin_state, order.origin_zip].filter(Boolean).join(' '),
             order.delivery_business || '',
-            order.origin_city || '',
-            order.destination_city || '',
+            [order.destination_city,order.destination_state,order.destination_zip].filter(Boolean).join(' '),
             order.carrier || '',
+            order.inop_info || '',
             order.vehicle_cnt || '0',
             order.price || '0',
             order.distance || '0',

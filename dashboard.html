@@ -30,6 +30,19 @@
 
         <div class="search-card">
             <form id="searchForm" class="search-form">
+                <div class="form-row">                    
+
+                    <div class="form-group">
+                        <label for="carrier">Carrier</label>
+                        <input type="text" id="carrier" name="carrier" placeholder="e.g., ABC Transport">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inopInfo">INOP</label>
+                        <input type="text" id="inopInfo" name="inopInfo" placeholder="e.g., Yes or No">
+                    </div>
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="pickupBusiness">Pickup Business Name</label>
@@ -37,15 +50,23 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="deliveryBusiness">Delivery Business Name</label>
-                        <input type="text" id="deliveryBusiness" name="deliveryBusiness" placeholder="Delivery Name Here">
+                        <label for="originCity">Origin City</label>
+                        <input type="text" id="originCity" name="originCity" placeholder="e.g., Dallas">
+                    </div>
+                    <div class="form-group">
+                        <label for="originState">Origin State</label>
+                        <input type="text" id="originState" name="originState" placeholder="e.g., TX">
+                    </div>
+                    <div class="form-group">
+                        <label for="originZip">Origin Zip</label>
+                        <input type="text" id="originZip" name="originZip" placeholder="e.g., 12345">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="originCity">Origin City</label>
-                        <input type="text" id="originCity" name="originCity" placeholder="e.g., Dallas">
+                        <label for="deliveryBusiness">Delivery Business Name</label>
+                        <input type="text" id="deliveryBusiness" name="deliveryBusiness" placeholder="Delivery Name Here">
                     </div>
 
                     <div class="form-group">
@@ -54,8 +75,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="carrier">Carrier</label>
-                        <input type="text" id="carrier" name="carrier" placeholder="e.g., ABC Transport">
+                        <label for="destinationState">Destination State</label>
+                        <input type="text" id="destinationState" name="destinationState" placeholder="e.g., OK">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="destinationZip">Destination Zip</label>
+                        <input type="text" id="destinationZip" name="destinationZip" placeholder="e.g., 12345">
                     </div>
                 </div>
 
