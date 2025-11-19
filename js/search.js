@@ -87,7 +87,7 @@ async function handleSearch(e) {
     const inopInfo = document.getElementById('inopInfo').value.trim();
 
     // At least one field must be filled
-    if (!pickupBusiness && !deliveryBusiness && !originCity && !destinationCity && !carrier) {
+    if (!pickupBusiness && !deliveryBusiness && !originCity &&!originZip && !destinationCity && !destinationZip && !carrier) {
         alert('Please enter at least one required search criteria');
         return;
     }
