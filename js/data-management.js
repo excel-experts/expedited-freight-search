@@ -193,7 +193,37 @@ function parseCSV(csvText) {
             'destination_city', 'carrier', 'price', 'distance', 'order_date'
         ];
         
-        // Map display names (variations users might use) to database column names
+        // Set selected columns (only include those that exist in the CSV)
+        selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));  
+        
+        displayColumnSelection(allHeaders);
+        displayPreview();
+
+    } catch (error) {
+        console.error('Error parsing CSV:', error);
+        alert('Error parsing CSV file: ' + error.message);
+    }
+}
+
+
+function displayColumnSelection(allHeaders) {
+    // Create column selection interface
+    const previewSection = document.getElementById('previewSection');
+    
+    // Check if column selection already exists, if not create it
+    let columnSelectionDiv = document.getElementById('columnSelection');
+    
+    if (!columnSelectionDiv) {
+        columnSelectionDiv = document.createElement('div');
+        columnSelectionDiv.id = 'columnSelection';
+        columnSelectionDiv.style.marginBottom = '20px';
+        
+        // Insert before the preview table
+        previewSection.insertBefore(columnSelectionDiv, previewSection.firstChild);
+    }
+    
+/*
+// Map display names (variations users might use) to database column names
         const displayNameMapping = {
             'order_id': ['order id', 'orderid', 'order #', 'order number', 'id'],
             'pickup_business': ['pickup business', 'pickup', 'origin business', 'shipper'],
@@ -236,34 +266,9 @@ function parseCSV(csvText) {
             if (dbColumn) {
                 window.csvToDbMapping[header] = dbColumn;
             }
-        });
-        
-        displayColumnSelection(allHeaders);
-        displayPreview();
-
-    } catch (error) {
-        console.error('Error parsing CSV:', error);
-        alert('Error parsing CSV file: ' + error.message);
-    }
-}
+        });*/
 
 
-function displayColumnSelection(allHeaders) {
-    // Create column selection interface
-    const previewSection = document.getElementById('previewSection');
-    
-    // Check if column selection already exists, if not create it
-    let columnSelectionDiv = document.getElementById('columnSelection');
-    
-    if (!columnSelectionDiv) {
-        columnSelectionDiv = document.createElement('div');
-        columnSelectionDiv.id = 'columnSelection';
-        columnSelectionDiv.style.marginBottom = '20px';
-        
-        // Insert before the preview table
-        previewSection.insertBefore(columnSelectionDiv, previewSection.firstChild);
-    }
-    
     // Build column selection checkboxes
     let html = '<h4>Step 1. Select all columns to import:</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">';
     
