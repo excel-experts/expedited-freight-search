@@ -120,10 +120,10 @@ async function handleSearch(e) {
             query = query.ilike('destination_city', `%${destinationCity}%`);
         }
         if (destinationState) {
-            query = query.ilike('destination_zip', `%${destinationState}%`);
+            query = query.ilike('destination_state', `%${destinationState}%`);
         }
         if (destinationZip) {
-            query = query.ilike('destination_Zip', `%${destinationZip}%`);
+            query = query.ilike('destination_zip', `%${destinationZip}%`);
         }
         if (carrier) {
             query = query.ilike('carrier', `%${carrier}%`);
@@ -163,10 +163,18 @@ function displayResults() {
     let loPriceCount = 0;
     let hiPriceSum = 0;
     let hiPriceCount = 0;
+    let inopPriceCount = 0;
+    let inopPriceSum = 0;
 
     allResults.forEach(order => {
     const price = parseFloat(order.price) || 0;
     const vehicleCnt = parseInt(order.vehicle_cnt, 10) || 0;
+    const inopVal = order.inop_info.toLocaleString();
+    if (inopVal.includes('Y')){
+        inopPriceSum += price;
+        inopPriceCount += 1;
+    }
+
     if (vehicleCnt <= 3) {
         loPriceSum += price;
         loPriceCount += 1;
@@ -182,13 +190,13 @@ function displayResults() {
     const avgHiPrice = hiPriceCount > 0 ? hiPriceSum / hiPriceCount : 0;
 
     // If you use avgInopPrice, update its logic accordingly or remove if not needed
-    const avgInopPrice = 0; // Replace with proper calculation if needed
+    const avgInopPrice = inopPriceCount > 0 ? inopPriceSum / inopPriceCount : 0;
 
     // Update metrics
     document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
     document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2) + ' / ' + loPriceCount.toLocaleString();
-    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2)+ ' / ' + hiPriceCount.toLocaleString();;
-    document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2) + ' / 0';
+    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2)+ ' / ' + hiPriceCount.toLocaleString();
+    document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2) + ' / ' + inopPriceCount.toLocaleString();
 
     // Display table
     displayTablePage();
