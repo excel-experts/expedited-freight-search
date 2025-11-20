@@ -364,6 +364,9 @@ function displayManualResults() {
     const previewTableHead = document.getElementById('previewTableHead');
     const previewTableBody = document.getElementById('previewTableBody');
     
+    // Use pre-selected columns or all columns if none selected
+    const columnsToShow = Object.keys(manResults[0]);
+
     // Display headers
     previewTableHead.innerHTML = '<tr>' + 
         columnsToShow.map(col => `<th>${col}</th>`).join('') + 
@@ -374,9 +377,6 @@ function displayManualResults() {
     previewTableBody.innerHTML = '';
     const previewRows = manResults.slice(0, 10);
     
-    // Use pre-selected columns or all columns if none selected
-    const columnsToShow = Object.keys(manResults[0]);
-
     previewRows.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = columnsToShow.map(col => {
