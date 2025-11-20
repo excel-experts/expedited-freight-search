@@ -6,7 +6,8 @@ import { createClient } from './config.js';
 import { checkIsAdmin } from './auth.js';
 
 let supabase;
-let allResults = [];
+let allResults = []; // historical results 
+let manResults = []; // manual entry results
 let currentPage = 1;
 const recordsPerPage = 50;
 
@@ -99,44 +100,48 @@ async function handleSearch(e) {
 
     try {
         // Build query
-        let query = supabase.from('historical_order_rollup').select('*');
+        let query_historical = supabase.from('historical_order_rollup').select('*');
+        let query_manual = supabase.from('manual_orders').select('*');
 
         if (pickupBusiness) {
-            query = query.ilike('pickup_business', `%${pickupBusiness}%`);
+            query_historical = query_historical.ilike('pickup_business', `%${pickupBusiness}%`);
+            query_manual = query_manual.ilike('pickup_business', `%${pickupBusiness}%`);
         }
         if (deliveryBusiness) {
-            query = query.ilike('delivery_business', `%${deliveryBusiness}%`);
+            query_historical = query_historical.ilike('delivery_business', `%${deliveryBusiness}%`);
+            query_manual = query_manual.ilike('delivery_business', `%${deliveryBusiness}%`);
         }
         if (originCity) {
-            query = query.ilike('origin_city', `%${originCity}%`);
+            query_historical = query_historical.ilike('origin_city', `%${originCity}%`);
+            query_manual = query_manual.ilike('origin_city', `%${originCity}%`);
         }
         if (originState) {
-            query = query.ilike('origin_State', `%${originState}%`);
+            query_historical = query_historical.ilike('origin_State', `%${originState}%`);
         }
         if (originZip) {
-            query = query.ilike('origin_Zip', `%${originZip}%`);
+            query_historical = query_historical.ilike('origin_Zip', `%${originZip}%`);
         }
         if (destinationCity) {
-            query = query.ilike('destination_city', `%${destinationCity}%`);
+            query_historical = query_historical.ilike('destination_city', `%${destinationCity}%`);
+            query_manual = query_manual.ilike('destination_city', `%${destinationCity}%`);
         }
         if (destinationState) {
-            query = query.ilike('destination_state', `%${destinationState}%`);
+            query_historical = query_historical.ilike('destination_state', `%${destinationState}%`);
         }
         if (destinationZip) {
-            query = query.ilike('destination_zip', `%${destinationZip}%`);
+            query_historical = query_historical.ilike('destination_zip', `%${destinationZip}%`);
         }
         if (carrier) {
-            query = query.ilike('carrier', `%${carrier}%`);
+            query_historical = query_historical.ilike('carrier', `%${carrier}%`);
         }
         if (inopInfo) {
-            query = query.ilike('inop_info', `%${inopInfo}%`);
+            query_historical = query_historical.ilike('inop_info', `%${inopInfo}%`);
         }
 
-        const { data, error } = await query;
+        const { data: data_hist, error: err_hist } = await query_historical;
+        if (err_hist) throw err_hist;
 
-        if (error) throw error;
-
-        allResults = data || [];
+        allResults = data_hist || [];
         currentPage = 1;
 
         if (allResults.length === 0) {
@@ -144,6 +149,16 @@ async function handleSearch(e) {
             document.getElementById('noResults').style.display = 'block';
         } else {
             displayResults();
+        }
+
+        const {data: data_man, error: err_man } = await query_manual;
+        if (err_man) throw err_man;
+
+        manResults = data_man || [];
+        if (manResults.length ===0){
+             // handle toggling no results display
+        } else {
+            displayManualResults()
         }
 
     } catch (error) {
@@ -339,4 +354,38 @@ function exportToCSV() {
 async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = 'index.html';
+}
+
+
+function displayManualResults() {
+    if (manResults.length === 0) return;
+    
+    const previewSection = document.getElementById('previewSection');
+    const previewTableHead = document.getElementById('previewTableHead');
+    const previewTableBody = document.getElementById('previewTableBody');
+    
+    // Display headers
+    previewTableHead.innerHTML = '<tr>' + 
+        columnsToShow.map(col => `<th>${col}</th>`).join('') + 
+                                 '</tr>';    
+ 
+
+    // Display first 10 rows
+    previewTableBody.innerHTML = '';
+    const previewRows = manResults.slice(0, 10);
+    
+    // Use pre-selected columns or all columns if none selected
+    const columnsToShow = Object.keys(manResults[0]);
+
+    previewRows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = columnsToShow.map(col => {
+            const value = row[col] !== undefined && row[col] !== null ? row[col] : '';
+            return `<td>${value}</td>`;
+        }).join('');
+        previewTableBody.appendChild(tr);
+    });
+    
+    document.getElementById('totalRows').textContent = manResults.length.toLocaleString();
+    previewSection.style.display = 'block';    
 }
