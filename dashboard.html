@@ -135,6 +135,23 @@
 
             <div class="results-header">
                 <h2>Search Results</h2>
+                <button class="btn btn-secondary btn-sm" id="exportBtn">
+                    📥 Export to CSV
+                </button>
+            </div><!-- results-header end-->
+
+            <div class="table-container">
+                <table class="data-table" id="resultsTable">
+                    <thead id="resultsTableHead">
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div><!-- table-container end-->
+
+            <div class="pagination" id="pagination">
+                <button class="btn btn-secondary btn-sm" id="prevBtn" disabled>Previous</button>
+                <span id="pageInfo">Page 1</span>
                 <button class="btn btn-secondary btn-sm" id="nextBtn" disabled>Next</button>
             </div>
         </div><!-- results-section end-->
