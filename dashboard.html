@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Orders - Expedited Freight</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <nav class="navbar">
         <div class="nav-content">
@@ -30,7 +32,7 @@
 
         <div class="search-card">
             <form id="searchForm" class="search-form">
-                <div class="form-row">                    
+                <div class="form-row">
 
                     <div class="form-group">
                         <label for="carrier">*Carrier</label>
@@ -99,18 +101,19 @@
             <div class="metrics-grid">
                 <div class="metrics-card">
                     <h3>Manually Entered Prices</h3>
-                        <div class="table-container" style="max-height: 300px;">
-                            <table class="data-table" id="previewTable">
-                                <thead id="previewTableHead"></thead>
-                                <tbody id="previewTableBody"></tbody>
-                            </table>
-                        </div>
-                        <p style="margin-top: 10px;"><strong>Total special price qoutes found:</strong> <span id="totalRows">0</span></p>
+                    <div class="table-container" style="max-height: 300px;">
+                        <table class="data-table" id="previewTable">
+                            <thead id="previewTableHead"></thead>
+                            <tbody id="previewTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Total special price qoutes found:</strong> <span
+                            id="totalRows">0</span></p>
                 </div>
             </div><!-- metrics-grid end-->
         </div><!-- preview-section end-->
 
-        <div id="resultsSection" style="display: none;">        
+        <div id="resultsSection" style="display: none;">
             <div class="metrics-grid">
                 <div class="metric-card">
                     <div class="metric-label">Total Records</div>
@@ -128,41 +131,10 @@
                     <div class="metric-label">Avg INOP Price</div>
                     <div class="metric-value" id="avgInopPrice">$0</div>
                 </div>
-            </div><!-- metrics-grid end-->            
+            </div><!-- metrics-grid end-->
 
             <div class="results-header">
                 <h2>Search Results</h2>
-                <button class="btn btn-secondary btn-sm" id="exportBtn">
-                    📥 Export to CSV
-                </button>
-            </div><!-- results-header end-->
-
-            <div class="table-container">
-                <table class="data-table" id="resultsTable">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th class="sortable" data-column="pickup_business">Pickup Business</th>
-                            <th class="sortable" data-column="origin_city">Location</th>
-                            <th class="sortable" data-column="delivery_business">Delivery Business</th>
-                            <th class="sortable" data-column="destination_city">Location</th>
-                            <th class="sortable" data-column="carrier">Carrier</th>
-                            <th class="sortable" data-column="inop_info">INOP</th>
-                            <th class="sortable" data-column="vehicle_cnt"># Autos</th>
-                            <th class="sortable" data-column="price">Price</th>
-                            <th class="sortable" data-column="distance">Distance (mi)</th>
-                            <th class="sortable" data-column="price_per_mile">Price/Mile</th>
-                            <th class="sortable" data-column="order_date">Order Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultsBody">
-                    </tbody>
-                </table>
-            </div><!-- table-container end-->
-
-            <div class="pagination" id="pagination">
-                <button class="btn btn-secondary btn-sm" id="prevBtn" disabled>Previous</button>
-                <span id="pageInfo">Page 1</span>
                 <button class="btn btn-secondary btn-sm" id="nextBtn" disabled>Next</button>
             </div>
         </div><!-- results-section end-->
@@ -179,4 +151,5 @@
     <script type="module" src="js/config.js"></script>
     <script type="module" src="js/search.js"></script>
 </body>
+
 </html>

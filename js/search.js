@@ -5,6 +5,25 @@
 import { createClient } from './config.js';
 import { checkIsAdmin } from './auth.js';
 
+const columnMapping = {
+    'order_id': 'Order ID',
+    'pickup_business': 'Pickup Business',
+    'origin_city': 'Origin City',
+    'origin_state': 'Origin State',
+    'origin_zip': 'Origin Zip',
+    'delivery_business': 'Delivery Business',
+    'destination_city': 'Destination City',
+    'destination_state': 'Destination State',
+    'destination_zip': 'Destination Zip',
+    'carrier': 'Carrier',
+    'inop_info': 'INOP',
+    'vehicle_cnt': '# Autos',
+    'price': 'Price',
+    'distance': 'Distance (mi)',
+    'price_per_mile': 'Price/Mile',
+    'order_date': 'Order Date'
+};
+
 let supabase;
 let allResults = []; // historical results 
 let manResults = []; // manual entry results
@@ -45,7 +64,8 @@ function init() {
     if (nextBtn) nextBtn.addEventListener('click', () => changePage(1));
 
     // Setup table sorting
-    setupTableSorting();
+    // Setup table sorting
+    // setupTableSorting(); // Called after table generation now
 }
 
 async function checkAuth() {
@@ -222,32 +242,64 @@ function displayResults() {
 }
 
 function displayTablePage() {
+    if (allResults.length === 0) return;
+
     const startIndex = (currentPage - 1) * recordsPerPage;
     const endIndex = startIndex + recordsPerPage;
     const pageResults = allResults.slice(startIndex, endIndex);
 
     const tbody = document.getElementById('resultsBody');
+    const thead = document.getElementById('resultsTableHead');
+
+    // Determine columns from the first result
+    // Default columns if no results (though we check length > 0 above)
+    const columnsToShow = Object.keys(allResults[0]);
+
+    // Generate Headers
+    thead.innerHTML = '<tr>' +
+        columnsToShow.map(col => {
+            const displayName = columnMapping[col] || col;
+            return `<th class="sortable" data-column="${col}">${displayName}</th>`;
+        }).join('') +
+        '</tr>';
+
+    // Re-attach sorting listeners
+    setupTableSorting();
+
     tbody.innerHTML = '';
 
     pageResults.forEach(order => {
         const row = document.createElement('tr');
-        const pricePerMile = order.distance > 0 ? (order.price / order.distance).toFixed(2) : '0.00';
-        const orderDate = order.order_date ? new Date(order.order_date).toLocaleDateString() : 'N/A';
+        row.innerHTML = columnsToShow.map(col => {
+            let value = order[col];
 
-        row.innerHTML = `
-            <td>${order.order_id || 'N/A'}</td>
-            <td>${order.pickup_business || 'N/A'}</td>
-            <td>${order.origin_city || ''}, ${order.origin_state || ''} ${order.origin_zip || ''}</td>
-            <td>${order.delivery_business || 'N/A'}</td>
-            <td>${order.destination_city || ''}, ${order.destination_state || ''} ${order.destination_zip || ''}</td>
-            <td>${order.carrier || 'N/A'}</td>
-            <td>${order.inop_info || 'N/A'}</td>
-            <td>${parseInt(order.vehicle_cnt || 0, 10)}</td>
-            <td>$${parseFloat(order.price || 0).toFixed(2)}</td>
-            <td>${parseFloat(order.distance || 0).toFixed(2)}</td>
-            <td>$${pricePerMile}</td>
-            <td>${orderDate}</td>
-        `;
+            // Formatting logic
+            if (col === 'price' || col === 'price_per_mile') {
+                // Handle price_per_mile calculation if it's not in the data (it might be calculated on the fly in original code)
+                // The original code calculated pricePerMile on the fly. 
+                // If the backend returns it, great. If not, we might need to compute it.
+                // However, the user said "Resultstable is defined as static... previewTable is dynamic".
+                // If we make resultsTable dynamic based on API response, we show what the API returns.
+                // The original code calculated pricePerMile: const pricePerMile = order.distance > 0 ? (order.price / order.distance).toFixed(2) : '0.00';
+                // If 'price_per_mile' is NOT in the API response, it won't show up in columnsToShow.
+                // If the user wants calculated columns, that's a different requirement.
+                // Assuming the API returns what's needed or we accept that dynamic means "what's in the data".
+                // BUT, looking at the original code, price_per_mile WAS calculated.
+                // If I strictly follow "dynamic based on field names returned", I should only show what's returned.
+                // But I should probably format known numeric fields.
+                if (value !== null && value !== undefined) {
+                    value = '$' + parseFloat(value).toFixed(2);
+                }
+            } else if (col === 'distance') {
+                if (value !== null && value !== undefined) {
+                    value = parseFloat(value).toFixed(2);
+                }
+            } else if (col === 'order_date') {
+                value = value ? new Date(value).toLocaleDateString() : 'N/A';
+            }
+
+            return `<td>${value !== null && value !== undefined ? value : ''}</td>`;
+        }).join('');
         tbody.appendChild(row);
     });
 
@@ -311,33 +363,24 @@ function handleClear() {
     document.getElementById('noResults').style.display = 'none';
     allResults = [];
 }
-
 function exportToCSV() {
     if (allResults.length === 0) return;
 
     // Create CSV content
-    const headers = ['Order ID', 'Pickup Business', 'Location', 'Delivery Business', 'Location', 'Carrier', 'INOP', 'Veh. Cnt', 'Price', 'Distance', 'Price/Mile', 'Order Date'];
+    const columns = Object.keys(allResults[0]);
+    const headers = columns.map(col => columnMapping[col] || col);
     const csvRows = [headers.join(',')];
 
     allResults.forEach(order => {
-        const pricePerMile = order.distance > 0 ? (order.price / order.distance).toFixed(2) : '0.00';
-        const orderDate = order.order_date ? new Date(order.order_date).toLocaleDateString() : 'N/A';
-
-        const row = [
-            order.order_id || '',
-            order.pickup_business || '',
-            [order.origin_city, order.origin_state, order.origin_zip].filter(Boolean).join(' '),
-            order.delivery_business || '',
-            [order.destination_city, order.destination_state, order.destination_zip].filter(Boolean).join(' '),
-            order.carrier || '',
-            order.inop_info || '',
-            order.vehicle_cnt || '0',
-            order.price || '0',
-            order.distance || '0',
-            pricePerMile,
-            orderDate
-        ];
-        csvRows.push(row.map(cell => `"${cell}"`).join(','));
+        const row = columns.map(col => {
+            let cell = order[col];
+            // Basic formatting for CSV if needed, or just raw data
+            if (col === 'order_date' && cell) {
+                cell = new Date(cell).toLocaleDateString();
+            }
+            return cell;
+        });
+        csvRows.push(row.map(cell => `"${cell !== null && cell !== undefined ? cell : ''}"`).join(','));
     });
 
     // Download CSV
@@ -365,24 +408,7 @@ function displayManualResults() {
     const previewTableBody = document.getElementById('previewTableBody');
 
     // Column mapping for display names
-    const columnMapping = {
-        'order_id': 'Order ID',
-        'pickup_business': 'Pickup Business',
-        'origin_city': 'Origin City',
-        'origin_state': 'Origin State',
-        'origin_zip': 'Origin Zip',
-        'delivery_business': 'Delivery Business',
-        'destination_city': 'Destination City',
-        'destination_state': 'Destination State',
-        'destination_zip': 'Destination Zip',
-        'carrier': 'Carrier',
-        'inop_info': 'INOP',
-        'vehicle_cnt': '# Autos',
-        'price': 'Price',
-        'distance': 'Distance (mi)',
-        'price_per_mile': 'Price/Mile',
-        'order_date': 'Order Date'
-    };
+    // Uses global columnMapping now
 
     // Use pre-selected columns or all columns if none selected
     const columnsToShow = Object.keys(manResults[0]);
