@@ -88,7 +88,7 @@ async function handleSearch(e) {
     const inopInfo = document.getElementById('inopInfo').value.trim();
 
     // At least one field must be filled
-    if (!pickupBusiness && !deliveryBusiness && !originCity &&!originZip && !destinationCity && !destinationZip && !carrier) {
+    if (!pickupBusiness && !deliveryBusiness && !originCity && !originZip && !destinationCity && !destinationZip && !carrier) {
         alert('Please enter at least one required search criteria');
         return;
     }
@@ -151,12 +151,12 @@ async function handleSearch(e) {
             displayResults();
         }
 
-        const {data: data_man, error: err_man } = await query_manual;
+        const { data: data_man, error: err_man } = await query_manual;
         if (err_man) throw err_man;
 
         manResults = data_man || [];
-        if (manResults.length ===0){
-             // handle toggling no results display
+        if (manResults.length === 0) {
+            // handle toggling no results display
         } else {
             displayManualResults()
         }
@@ -168,7 +168,7 @@ async function handleSearch(e) {
     }
 }
 
-function displayResults() {   
+function displayResults() {
 
     // Calculate metrics
     const totalRecords = allResults.length;
@@ -182,21 +182,21 @@ function displayResults() {
     let inopPriceSum = 0;
 
     allResults.forEach(order => {
-    const price = parseFloat(order.price) || 0;
-    const vehicleCnt = parseInt(order.vehicle_cnt, 10) || 0;
-    const inopVal = order.inop_info.toLocaleString();
-    if (inopVal.includes('Y')){
-        inopPriceSum += price;
-        inopPriceCount += 1;
-    }
+        const price = parseFloat(order.price) || 0;
+        const vehicleCnt = parseInt(order.vehicle_cnt, 10) || 0;
+        const inopVal = order.inop_info.toLocaleString();
+        if (inopVal.includes('Y')) {
+            inopPriceSum += price;
+            inopPriceCount += 1;
+        }
 
-    if (vehicleCnt <= 3) {
-        loPriceSum += price;
-        loPriceCount += 1;
-    } else if (vehicleCnt >= 4) {
-        hiPriceSum += price;
-        hiPriceCount += 1;
-    }
+        if (vehicleCnt <= 3) {
+            loPriceSum += price;
+            loPriceCount += 1;
+        } else if (vehicleCnt >= 4) {
+            hiPriceSum += price;
+            hiPriceCount += 1;
+        }
     });
 
     const totalPrice = loPriceSum + hiPriceSum;
@@ -210,7 +210,7 @@ function displayResults() {
     // Update metrics
     document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
     document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2) + ' / ' + loPriceCount.toLocaleString();
-    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2)+ ' / ' + hiPriceCount.toLocaleString();
+    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2) + ' / ' + hiPriceCount.toLocaleString();
     document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2) + ' / ' + inopPriceCount.toLocaleString();
 
     // Display table
@@ -328,7 +328,7 @@ function exportToCSV() {
             order.pickup_business || '',
             [order.origin_city, order.origin_state, order.origin_zip].filter(Boolean).join(' '),
             order.delivery_business || '',
-            [order.destination_city,order.destination_state,order.destination_zip].filter(Boolean).join(' '),
+            [order.destination_city, order.destination_state, order.destination_zip].filter(Boolean).join(' '),
             order.carrier || '',
             order.inop_info || '',
             order.vehicle_cnt || '0',
@@ -359,24 +359,47 @@ async function handleLogout() {
 
 function displayManualResults() {
     if (manResults.length === 0) return;
-    
+
     const previewSection = document.getElementById('previewSection');
     const previewTableHead = document.getElementById('previewTableHead');
     const previewTableBody = document.getElementById('previewTableBody');
-    
+
+    // Column mapping for display names
+    const columnMapping = {
+        'order_id': 'Order ID',
+        'pickup_business': 'Pickup Business',
+        'origin_city': 'Origin City',
+        'origin_state': 'Origin State',
+        'origin_zip': 'Origin Zip',
+        'delivery_business': 'Delivery Business',
+        'destination_city': 'Destination City',
+        'destination_state': 'Destination State',
+        'destination_zip': 'Destination Zip',
+        'carrier': 'Carrier',
+        'inop_info': 'INOP',
+        'vehicle_cnt': '# Autos',
+        'price': 'Price',
+        'distance': 'Distance (mi)',
+        'price_per_mile': 'Price/Mile',
+        'order_date': 'Order Date'
+    };
+
     // Use pre-selected columns or all columns if none selected
     const columnsToShow = Object.keys(manResults[0]);
 
     // Display headers
-    previewTableHead.innerHTML = '<tr>' + 
-        columnsToShow.map(col => `<th>${col}</th>`).join('') + 
-                                 '</tr>';    
- 
+    previewTableHead.innerHTML = '<tr>' +
+        columnsToShow.map(col => {
+            const displayName = columnMapping[col] || col;
+            return `<th>${displayName}</th>`;
+        }).join('') +
+        '</tr>';
+
 
     // Display first 10 rows
     previewTableBody.innerHTML = '';
     const previewRows = manResults.slice(0, 10);
-    
+
     previewRows.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = columnsToShow.map(col => {
@@ -385,7 +408,7 @@ function displayManualResults() {
         }).join('');
         previewTableBody.appendChild(tr);
     });
-    
+
     document.getElementById('totalRows').textContent = manResults.length.toLocaleString();
-    previewSection.style.display = 'block';    
+    previewSection.style.display = 'block';
 }
