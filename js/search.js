@@ -8,13 +8,9 @@ import { checkIsAdmin } from './auth.js';
 const columnMapping = {
     'order_id': 'Order ID',
     'pickup_business': 'Pickup Business',
-    'origin_city': 'Origin City',
-    'origin_state': 'Origin State',
-    'origin_zip': 'Origin Zip',
+    'origin': 'Origin',
     'delivery_business': 'Delivery Business',
-    'destination_city': 'Destination City',
-    'destination_state': 'Destination State',
-    'destination_zip': 'Destination Zip',
+    'destination': 'Destination',
     'carrier': 'Carrier',
     'inop_info': 'INOP',
     'vehicle_cnt': '# Autos',
@@ -241,6 +237,7 @@ function displayResults() {
     document.getElementById('resultsSection').style.display = 'block';
 }
 
+
 function displayTablePage() {
     if (allResults.length === 0) return;
 
@@ -252,7 +249,6 @@ function displayTablePage() {
     const thead = document.getElementById('resultsTableHead');
 
     // Determine columns from the first result
-    // Default columns if no results (though we check length > 0 above)
     const columnsToShow = Object.keys(allResults[0]);
 
     // Generate Headers
@@ -271,34 +267,8 @@ function displayTablePage() {
     pageResults.forEach(order => {
         const row = document.createElement('tr');
         row.innerHTML = columnsToShow.map(col => {
-            let value = order[col];
-
-            // Formatting logic
-            if (col === 'price' || col === 'price_per_mile') {
-                // Handle price_per_mile calculation if it's not in the data (it might be calculated on the fly in original code)
-                // The original code calculated pricePerMile on the fly. 
-                // If the backend returns it, great. If not, we might need to compute it.
-                // However, the user said "Resultstable is defined as static... previewTable is dynamic".
-                // If we make resultsTable dynamic based on API response, we show what the API returns.
-                // The original code calculated pricePerMile: const pricePerMile = order.distance > 0 ? (order.price / order.distance).toFixed(2) : '0.00';
-                // If 'price_per_mile' is NOT in the API response, it won't show up in columnsToShow.
-                // If the user wants calculated columns, that's a different requirement.
-                // Assuming the API returns what's needed or we accept that dynamic means "what's in the data".
-                // BUT, looking at the original code, price_per_mile WAS calculated.
-                // If I strictly follow "dynamic based on field names returned", I should only show what's returned.
-                // But I should probably format known numeric fields.
-                if (value !== null && value !== undefined) {
-                    value = '$' + parseFloat(value).toFixed(2);
-                }
-            } else if (col === 'distance') {
-                if (value !== null && value !== undefined) {
-                    value = parseFloat(value).toFixed(2);
-                }
-            } else if (col === 'order_date') {
-                value = value ? new Date(value).toLocaleDateString() : 'N/A';
-            }
-
-            return `<td>${value !== null && value !== undefined ? value : ''}</td>`;
+            const value = formatValue(col, order[col]);
+            return `<td>${value}</td>`;
         }).join('');
         tbody.appendChild(row);
     });
@@ -310,59 +280,43 @@ function displayTablePage() {
     document.getElementById('nextBtn').disabled = currentPage === totalPages;
 }
 
-function changePage(direction) {
-    currentPage += direction;
-    displayTablePage();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
 function setupTableSorting() {
-    const headers = document.querySelectorAll('.sortable');
-    headers.forEach(header => {
-        header.addEventListener('click', () => {
-            const column = header.dataset.column;
-            sortResults(column);
+    document.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+            const column = th.dataset.column;
+
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            // Sort allResults
+            allResults.sort((a, b) => {
+                let valA = a[column];
+                let valB = b[column];
+
+                // Handle nulls
+                if (valA === null) valA = '';
+                if (valB === null) valB = '';
+
+                // Numeric sort for price/distance
+                if (['price', 'distance', 'price_per_mile', 'vehicle_cnt'].includes(column)) {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                }
+
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            displayTablePage();
         });
     });
 }
 
-let sortDirection = {};
-
-function sortResults(column) {
-    const direction = sortDirection[column] === 'asc' ? 'desc' : 'asc';
-    sortDirection[column] = direction;
-
-    allResults.sort((a, b) => {
-        let valA = a[column];
-        let valB = b[column];
-
-        // Handle numeric columns
-        if (['price', 'distance', 'price_per_mile'].includes(column)) {
-            valA = parseFloat(valA) || 0;
-            valB = parseFloat(valB) || 0;
-        }
-
-        // Handle date column
-        if (column === 'order_date') {
-            valA = new Date(valA || 0);
-            valB = new Date(valB || 0);
-        }
-
-        if (valA < valB) return direction === 'asc' ? -1 : 1;
-        if (valA > valB) return direction === 'asc' ? 1 : -1;
-        return 0;
-    });
-
-    currentPage = 1;
-    displayTablePage();
-}
-
-function handleClear() {
-    document.getElementById('searchForm').reset();
-    document.getElementById('resultsSection').style.display = 'none';
-    document.getElementById('noResults').style.display = 'none';
-    allResults = [];
-}
 function exportToCSV() {
     if (allResults.length === 0) return;
 
@@ -373,14 +327,14 @@ function exportToCSV() {
 
     allResults.forEach(order => {
         const row = columns.map(col => {
-            let cell = order[col];
-            // Basic formatting for CSV if needed, or just raw data
-            if (col === 'order_date' && cell) {
-                cell = new Date(cell).toLocaleDateString();
+            let cell = formatValue(col, order[col]);
+            // Escape quotes for CSV
+            if (typeof cell === 'string' && cell.includes(',')) {
+                cell = `"${cell}"`;
             }
             return cell;
         });
-        csvRows.push(row.map(cell => `"${cell !== null && cell !== undefined ? cell : ''}"`).join(','));
+        csvRows.push(row.join(','));
     });
 
     // Download CSV
@@ -399,16 +353,12 @@ async function handleLogout() {
     window.location.href = 'index.html';
 }
 
-
 function displayManualResults() {
     if (manResults.length === 0) return;
 
     const previewSection = document.getElementById('previewSection');
     const previewTableHead = document.getElementById('previewTableHead');
     const previewTableBody = document.getElementById('previewTableBody');
-
-    // Column mapping for display names
-    // Uses global columnMapping now
 
     // Use pre-selected columns or all columns if none selected
     const columnsToShow = Object.keys(manResults[0]);
