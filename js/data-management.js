@@ -241,26 +241,27 @@ function displayPreview() {
     // Use selected columns or all columns if none selected
     const columnsToShow = selectedColumns.length > 0 ? selectedColumns : Object.keys(parsedData[0]);
 
+    // Define DB fields for mapping options
+    const dbFields = [
+        'order_id', 'pickup_business', 'delivery_business', 'origin_city',
+        'origin_state', 'origin_zip', 'destination_city', 'destination_state',
+        'destination_zip', 'carrier', 'inop_info', 'price', 'distance',
+        'price_per_mile', 'order_date'
+    ];
+
     // Display headers
     previewTableHead.innerHTML = '<tr>' +
-        columnsToShow.map(col => `<th>${col}<br/><select data-csv-col="${col}">
+        columnsToShow.map(col => {
+            const currentMapping = columnMapping[col] || '';
+            const options = dbFields.map(field =>
+                `<option value="${field}" ${field === currentMapping ? 'selected' : ''}>${field}</option>`
+            ).join('');
+
+            return `<th>${col}<br/><select data-csv-col="${col}">
                     <option value="">map column</option>
-                    <option value="order_id">order_id</option>
-                    <option value="pickup_business">pickup_business</option>
-                    <option value="delivery_business">delivery_business</option>
-                    <option value="origin_city">origin_city</option>
-                    <option value="origin_state">origin_state</option>
-                    <option value="origin_zip">origin_zip</option>
-                    <option value="destination_city">destination_city</option>
-                    <option value="destination_state">destination_state</option>
-                    <option value="destination_zip">destination_zip</option>
-                    <option value="carrier">carrier</option>
-                    <option value="inop_info">inop_info</option>
-                    <option value="price">price</option>
-                    <option value="distance">distance</option>
-                    <option value="price_per_mile">price_per_mile</option>
-                    <option value="order_date">order_date</option>
-                </select></th>`).join('') +
+                    ${options}
+                </select></th>`;
+        }).join('') +
         '</tr>';
 
     // Add event listeners to all selects after rendering
