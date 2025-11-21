@@ -127,6 +127,7 @@ async function handleSearch(e) {
             document.getElementById('loadingResults').style.display = 'none';
             document.getElementById('noResults').style.display = 'block';
         } else {
+            processResults();
             displayResults();
         }
 
@@ -147,8 +148,41 @@ async function handleSearch(e) {
     }
 }
 
-function displayResults() {
+function processResults() {
+    if (!allResults || !Array.isArray(allResults)) {
+        console.error('allResults is not defined or is not an array');
+        return;
+    }
 
+    allResults.forEach(record => {
+        try {
+            // Combine Origin
+            const originParts = [];
+            if (record.origin_city) originParts.push(record.origin_city);
+            if (record.origin_state) originParts.push(record.origin_state);
+            if (record.origin_zip) originParts.push(record.origin_zip);
+
+            if (originParts.length > 0) {
+                record.origin = originParts.join(', ');
+            }
+
+            // Combine Destination
+            const destParts = [];
+            if (record.destination_city) destParts.push(record.destination_city);
+            if (record.destination_state) destParts.push(record.destination_state);
+            if (record.destination_zip) destParts.push(record.destination_zip);
+
+            if (destParts.length > 0) {
+                record.destination = destParts.join(', ');
+            }
+
+        } catch (err) {
+            console.warn('Error processing record:', record, err);
+        }
+    });
+}
+
+function displayResults() {
     // Calculate metrics
     const totalRecords = allResults.length;
 
