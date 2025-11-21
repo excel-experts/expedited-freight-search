@@ -19,7 +19,7 @@
             <h1>Data Management</h1>
             <p>Upload and manage your orders data. You can either upload previous orders, or add a new record for quoted
                 pricing.</p>
-            <div id="headerMessage" class="message" style="display: none; margin-top: 20px;"></div>
+
         </div>
 
         <div class="admin-grid">
@@ -199,6 +199,22 @@
                 <div class="modal-actions">
                     <button class="btn btn-danger" id="confirmYes">Yes, Proceed</button>
                     <button class="btn btn-secondary" id="confirmNo">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="messageModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="messageTitle">Notification</h3>
+                <button class="modal-close" id="closeMessageModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="messageContent"></p>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="messageOk">OK</button>
                 </div>
             </div>
         </div>

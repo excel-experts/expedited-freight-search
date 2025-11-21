@@ -59,6 +59,12 @@ async function init() {
 
     if (manualRecordForm) manualRecordForm.addEventListener('submit', handleManualRecordSubmit);
 
+    // Message Modal Listeners
+    const closeMessageModal = document.getElementById('closeMessageModal');
+    const messageOk = document.getElementById('messageOk');
+    if (closeMessageModal) closeMessageModal.addEventListener('click', () => hideModal('messageModal'));
+    if (messageOk) messageOk.addEventListener('click', () => hideModal('messageModal'));
+
     // Close modal on outside click
     window.addEventListener('click', (e) => {
         // Check if the clicked element has the class "modal"
@@ -336,7 +342,7 @@ async function executeUpload() {
 
     // Show progress
     document.getElementById('uploadProgress').style.display = 'block';
-    document.getElementById('headerMessage').style.display = 'none';
+
     document.getElementById('appendBtn').disabled = true;
     document.getElementById('replaceBtn').disabled = true;
 
@@ -521,17 +527,24 @@ async function downloadAllData() {
 }
 
 function showMessage(message, type) {
-    const element = document.getElementById('headerMessage');
-    element.textContent = message;
-    element.className = `message ${type}`;
-    element.style.display = 'block';
+    const modal = document.getElementById('messageModal');
+    const title = document.getElementById('messageTitle');
+    const content = document.getElementById('messageContent');
 
+    title.textContent = type === 'error' ? '❌ Error' : '✅ Success';
+    content.textContent = message;
+
+    modal.style.display = 'flex';
+
+    // Auto close after 5 seconds
     setTimeout(() => {
-        element.style.display = 'none';
+        if (modal.style.display === 'flex') {
+            hideModal('messageModal');
+        }
     }, 5000);
 }
 
 function hideModal(modal_name) {
     const modal = document.getElementById(modal_name);
-    modal.style.display = 'none';
+    if (modal) modal.style.display = 'none';
 }
