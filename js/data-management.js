@@ -2,30 +2,34 @@
 // Data Management Module (Admin Only) 
 // ====================================
 
-import { createClient } from './config.js';
-import { checkIsAdmin } from './auth.js';
+import { getSupabase, checkIsAdmin } from './app.js';
 
 let supabase;
 let parsedData = [];
 let uploadMode = '';
 
-// Load Supabase from CDN
-const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-script.onload = () => {
-    supabase = createClient();
-    init();
-};
-document.head.appendChild(script);
+// Initialize
+init();
 
-function init() {
+async function init() {
+    // Wait for app to be ready and get supabase client
+    supabase = await getSupabase();
+
     if (!supabase) {
         alert('Supabase configuration error. Please check your credentials.');
         return;
     }
 
     // Check authentication and admin status
-    checkAuthAndAdmin();
+    // Note: app.js already checks auth and admin status for admin pages, 
+    // but we might want to load stats here if check passes.
+    // However, since app.js handles the redirect, we can assume if we are here, we are good?
+    // Actually, app.js checkAuth is async, so we should verify if we need to wait or re-check.
+    // app.js initApp awaits checkAuth. Since we await getSupabase which awaits ready, 
+    // auth check should be complete.
+
+    // But we need to load stats specifically for this page.
+    await loadStats();
 
     // Setup event listeners
     const selectFileBtn = document.getElementById('selectFileBtn');
@@ -34,7 +38,6 @@ function init() {
     const appendBtn = document.getElementById('appendBtn');
     const replaceBtn = document.getElementById('replaceBtn');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
-    const logoutBtn = document.getElementById('logoutBtn');    
     const closeRequireModal = document.getElementById('closeRequireModal');
     const closeConfirmModal = document.getElementById('closeConfirmModal');
     const confirmNo = document.getElementById('confirmNo');
@@ -42,7 +45,6 @@ function init() {
 
     // New form elements for manual record entry
     const manualRecordForm = document.getElementById('manualEntryForm');
-    const manualRecordSubmitBtn = document.getElementById('manualSubmitBtn');
 
     if (selectFileBtn) selectFileBtn.addEventListener('click', () => fileInput.click());
     if (fileInput) fileInput.addEventListener('change', handleFileSelect);
@@ -50,7 +52,6 @@ function init() {
     if (appendBtn) appendBtn.addEventListener('click', () => confirmUpload('append'));
     if (replaceBtn) replaceBtn.addEventListener('click', () => confirmUpload('replace'));
     if (downloadAllBtn) downloadAllBtn.addEventListener('click', downloadAllData);
-    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     if (closeRequireModal) closeRequireModal.addEventListener('click', () => hideModal('requireModal'));
     if (closeConfirmModal) closeConfirmModal.addEventListener('click', () => hideModal('confirmModal'));
     if (confirmNo) confirmNo.addEventListener('click', () => hideModal('confirmModal'));
@@ -69,65 +70,42 @@ function init() {
 
 }
 
-async function checkAuthAndAdmin() {
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    // Display user email
-    const userEmailElement = document.getElementById('userEmail');
-    if (userEmailElement) {
-        userEmailElement.textContent = session.user.email;
-    }
-
-    // Check admin status
-    const isAdmin = await checkIsAdmin(session.user.id);
-
-    if (!isAdmin) {
-        alert('Access denied. Admin privileges required.');
-        window.location.href = 'dashboard.html';
-        return;
-    }
-
-    // Load statistics
-    await loadStats();
-}
 async function loadStats() {
-  document.getElementById('loadingStats').style.display = 'block';
-  document.getElementById('statsContent').style.display = 'none';
+    const loadingStats = document.getElementById('loadingStats');
+    const statsContent = document.getElementById('statsContent');
 
-  try {
+    if (loadingStats) loadingStats.style.display = 'block';
+    if (statsContent) statsContent.style.display = 'none';
 
-    // Fetch stats via RPC call
-    const { data: blankCounts, error: blankCountsError } = await supabase
-      .rpc('get_stat_counts');
+    try {
 
-    if (blankCountsError){
-         throw blankCountsError;
-    } else if (blankCounts && blankCounts.length > 0) {
-        document.getElementById('totalRecordsCount').textContent = blankCounts[0].total_order_count.toLocaleString();
-        document.getElementById('blankCarrierCount').textContent = blankCounts[0].blank_carrier_count.toLocaleString();
-        document.getElementById('blankOrderIdCount').textContent = blankCounts[0].blank_order_id_count.toLocaleString();
-        document.getElementById('blankPriceCount').textContent = blankCounts[0].blank_price_count.toLocaleString();    
-        
-        const maxOrderDate = blankCounts[0].max_order_date ? new Date(blankCounts[0].max_order_date).toLocaleDateString() : 'N/A';
-        const maxUpdatedAt = blankCounts[0].max_updated_at ? new Date(blankCounts[0].max_updated_at).toLocaleString() : 'N/A';
+        // Fetch stats via RPC call
+        const { data: blankCounts, error: blankCountsError } = await supabase
+            .rpc('get_stat_counts');
 
-        document.getElementById('newestOrder').textContent = maxOrderDate;
-        document.getElementById('lastUpdated').textContent = maxUpdatedAt;
+        if (blankCountsError) {
+            throw blankCountsError;
+        } else if (blankCounts && blankCounts.length > 0) {
+            document.getElementById('totalRecordsCount').textContent = blankCounts[0].total_order_count.toLocaleString();
+            document.getElementById('blankCarrierCount').textContent = blankCounts[0].blank_carrier_count.toLocaleString();
+            document.getElementById('blankOrderIdCount').textContent = blankCounts[0].blank_order_id_count.toLocaleString();
+            document.getElementById('blankPriceCount').textContent = blankCounts[0].blank_price_count.toLocaleString();
+
+            const maxOrderDate = blankCounts[0].max_order_date ? new Date(blankCounts[0].max_order_date).toLocaleDateString() : 'N/A';
+            const maxUpdatedAt = blankCounts[0].max_updated_at ? new Date(blankCounts[0].max_updated_at).toLocaleString() : 'N/A';
+
+            document.getElementById('newestOrder').textContent = maxOrderDate;
+            document.getElementById('lastUpdated').textContent = maxUpdatedAt;
+        }
+
+        if (loadingStats) loadingStats.style.display = 'none';
+        if (statsContent) statsContent.style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading stats:', error);
+        if (loadingStats) loadingStats.style.display = 'none';
+        showMessage('Error loading statistics: ' + error.message, 'error');
     }
-    
-    document.getElementById('loadingStats').style.display = 'none';
-    document.getElementById('statsContent').style.display = 'block';
-
-  } catch (error) {
-    console.error('Error loading stats:', error);
-    document.getElementById('loadingStats').style.display = 'none';
-    showMessage('Error loading statistics: ' + error.message, 'error');
-  }
 }
 
 
@@ -186,16 +164,16 @@ function parseCSV(csvText) {
 
         parsedData = results.data;
         const allHeaders = Object.keys(parsedData[0]);
-        
+
         // Database column names (what your DB expects)
         const defaultColumns = [
-            'order_id', 'pickup_business', 'delivery_business', 'origin_city', 
+            'order_id', 'pickup_business', 'delivery_business', 'origin_city',
             'destination_city', 'carrier', 'price', 'distance', 'order_date'
         ];
-        
-        // Set selected columns (only include those that exist in the CSV)
-        selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));  
-        
+
+        // Set selected columns (only include those that exist in the CSV)
+        selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));
+
         displayColumnSelection(allHeaders);
         displayPreview();
 
@@ -209,69 +187,22 @@ function parseCSV(csvText) {
 function displayColumnSelection(allHeaders) {
     // Create column selection interface
     const previewSection = document.getElementById('previewSection');
-    
+
     // Check if column selection already exists, if not create it
     let columnSelectionDiv = document.getElementById('columnSelection');
-    
+
     if (!columnSelectionDiv) {
         columnSelectionDiv = document.createElement('div');
         columnSelectionDiv.id = 'columnSelection';
         columnSelectionDiv.style.marginBottom = '20px';
-        
+
         // Insert before the preview table
         previewSection.insertBefore(columnSelectionDiv, previewSection.firstChild);
     }
-    
-/*
-// Map display names (variations users might use) to database column names
-        const displayNameMapping = {
-            'order_id': ['order id', 'orderid', 'order #', 'order number', 'id'],
-            'pickup_business': ['pickup business', 'pickup', 'origin business', 'shipper'],
-            'delivery_business': ['delivery business', 'delivery', 'destination business', 'consignee', 'receiver'],
-            'origin_city': ['origin city', 'origin', 'pickup city', 'from city', 'source city'],
-            'destination_city': ['destination city', 'destination', 'delivery city', 'to city', 'dest city'],
-            'carrier': ['carrier', 'carrier name', 'shipping carrier', 'transport company'],
-            'price': ['price', 'cost', 'amount', 'total', 'rate'],
-            'distance': ['distance', 'miles', 'mileage', 'mi'],
-            'order_date': ['order date', 'date', 'order_date', 'created date', 'ship date']
-        };
-        
-        // Create reverse lookup: display name -> database column
-        const displayToDbColumn = {};
-        for (const [dbColumn, displayNames] of Object.entries(displayNameMapping)) {
-            // Add the exact db column name first
-            displayToDbColumn[dbColumn.toLowerCase()] = dbColumn;
-            // Add all display name variations
-            displayNames.forEach(displayName => {
-                displayToDbColumn[displayName.toLowerCase()] = dbColumn;
-            });
-        }
-        
-        // Map CSV headers to database columns
-        selectedColumns = allHeaders
-            .map(header => {
-                const normalized = header.toLowerCase().trim();
-                return displayToDbColumn[normalized] || null;
-            })
-            .filter(col => col !== null && defaultColumns.includes(col));
-        
-        // Remove duplicates in case multiple CSV columns map to same DB column
-        selectedColumns = [...new Set(selectedColumns)];
-        
-        // Store the mapping for later use in upload
-        window.csvToDbMapping = {};
-        allHeaders.forEach(header => {
-            const normalized = header.toLowerCase().trim();
-            const dbColumn = displayToDbColumn[normalized];
-            if (dbColumn) {
-                window.csvToDbMapping[header] = dbColumn;
-            }
-        });*/
-
 
     // Build column selection checkboxes
     let html = '<h4>Step 1. Select all columns to import:</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">';
-    
+
     allHeaders.forEach(header => {
         const isChecked = selectedColumns.includes(header) ? 'checked' : '';
         html += `
@@ -281,10 +212,10 @@ function displayColumnSelection(allHeaders) {
             </label>
         `;
     });
-    
+
     html += '</div>';
     columnSelectionDiv.innerHTML = html;
-    
+
     // Add event listeners to checkboxes
     document.querySelectorAll('.column-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', (e) => {
@@ -302,16 +233,16 @@ function displayColumnSelection(allHeaders) {
 
 function displayPreview() {
     if (parsedData.length === 0) return;
-    
+
     const previewSection = document.getElementById('previewSection');
     const previewTableHead = document.getElementById('previewTableHead');
     const previewTableBody = document.getElementById('previewTableBody');
-    
+
     // Use selected columns or all columns if none selected
     const columnsToShow = selectedColumns.length > 0 ? selectedColumns : Object.keys(parsedData[0]);
-    
+
     // Display headers
-    previewTableHead.innerHTML = '<tr>' + 
+    previewTableHead.innerHTML = '<tr>' +
         columnsToShow.map(col => `<th>${col}<br/><select data-csv-col="${col}">
                     <option value="">map column</option>
                     <option value="order_id">order_id</option>
@@ -329,12 +260,12 @@ function displayPreview() {
                     <option value="distance">distance</option>
                     <option value="price_per_mile">price_per_mile</option>
                     <option value="order_date">order_date</option>
-                </select></th>`).join('') + 
+                </select></th>`).join('') +
         '</tr>';
-    
+
     // Add event listeners to all selects after rendering
     document.querySelectorAll('select[data-csv-col]').forEach(select => {
-        select.addEventListener('change', function() {
+        select.addEventListener('change', function () {
             const csvCol = this.getAttribute('data-csv-col');
             const dbField = this.value;
             columnMapping[csvCol] = dbField;
@@ -344,7 +275,7 @@ function displayPreview() {
     // Display first 10 rows
     previewTableBody.innerHTML = '';
     const previewRows = parsedData.slice(0, 10);
-    
+
     previewRows.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = columnsToShow.map(col => {
@@ -353,10 +284,10 @@ function displayPreview() {
         }).join('');
         previewTableBody.appendChild(tr);
     });
-    
+
     document.getElementById('totalRows').textContent = parsedData.length.toLocaleString();
     previewSection.style.display = 'block';
-    
+
     // Enable upload buttons
     document.getElementById('appendBtn').disabled = false;
     document.getElementById('replaceBtn').disabled = false;
@@ -392,7 +323,7 @@ function showUploadInfo() {
 function confirmUpload(mode) {
     uploadMode = mode;
 
-    const message = mode === 'append' 
+    const message = mode === 'append'
         ? `Are you sure you want to append ${parsedData.length} records to the existing data?`
         : `⚠️ WARNING: This will delete ALL existing records and replace them with ${parsedData.length} new records. This action cannot be undone. Are you sure?`;
 
@@ -401,28 +332,28 @@ function confirmUpload(mode) {
 }
 async function executeUpload() {
     hideModal('confirmModal');
-    
+
     // Show progress
     document.getElementById('uploadProgress').style.display = 'block';
     document.getElementById('headerMessage').style.display = 'none';
     document.getElementById('appendBtn').disabled = true;
     document.getElementById('replaceBtn').disabled = true;
-    
+
     try {
         // If replace mode, delete all existing records first
         if (uploadMode === 'replace') {
             updateProgress(10, 'Deleting existing records...');
-            
+
             const { error: deleteError } = await supabase
                 .from('historical_orders')
                 .delete()
                 .neq('id', '00000000-0000-0000-0000-000000000000');
-            
+
             if (deleteError) throw deleteError;
         }
-        
 
-            // Map CSV columns to database fields using global columnMapping
+
+        // Map CSV columns to database fields using global columnMapping
         const dataToUpload = parsedData.map(row => {
             let newRow = {};
             for (let csvCol in columnMapping) {
@@ -438,61 +369,44 @@ async function executeUpload() {
             return newRow;
         });
 
-        /*
-        // Filter data to only include selected columns
-        const dataToUpload = parsedData.map(row => {
-            const filteredRow = {};
-            selectedColumns.forEach(col => {
-                filteredRow[col] = row[col];
-            });
-            
-            // Calculate price_per_mile if not provided
-            if (!filteredRow.price_per_mile && filteredRow.price && filteredRow.distance) {
-                filteredRow.price_per_mile = (parseFloat(filteredRow.price) / parseFloat(filteredRow.distance)).toFixed(2);
-            }
-            
-            return filteredRow;
-        });
-        */
 
-        
         // Upload in batches of 100 records
         const batchSize = 100;
         const totalBatches = Math.ceil(dataToUpload.length / batchSize);
-        
+
         for (let i = 0; i < totalBatches; i++) {
             const start = i * batchSize;
             const end = Math.min(start + batchSize, dataToUpload.length);
             const batch = dataToUpload.slice(start, end);
-            
+
             const progress = 10 + Math.floor((i / totalBatches) * 80);
             updateProgress(progress, `Uploading batch ${i + 1} of ${totalBatches}...`);
-            
+
             const { error } = await supabase
                 .from('historical_orders')
                 .insert(batch);
-            
+
             if (error) throw error;
         }
-        
+
         updateProgress(100, 'Upload complete!');
-        
+
         // Show success message
         setTimeout(() => {
             document.getElementById('uploadProgress').style.display = 'none';
             showMessage(`Successfully uploaded ${dataToUpload.length} records!`, 'success');
-            
+
             // Reset form
             document.getElementById('fileInput').value = '';
             document.getElementById('fileInfo').style.display = 'none';
             document.getElementById('previewSection').style.display = 'none';
             parsedData = [];
             selectedColumns = [];
-            
+
             // Reload stats
             loadStats();
         }, 1000);
-        
+
     } catch (error) {
         console.error('Upload error:', error);
         document.getElementById('uploadProgress').style.display = 'none';
@@ -619,9 +533,4 @@ function showMessage(message, type) {
 function hideModal(modal_name) {
     const modal = document.getElementById(modal_name);
     modal.style.display = 'none';
-}
-
-async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = 'index.html';
 }

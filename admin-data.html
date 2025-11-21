@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,26 +8,17 @@
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
+
 <body>
     <nav class="navbar">
-        <div class="nav-content">
-            <div class="nav-brand">
-                <h2>🚚 Expedited Freight</h2>
-            </div>
-            <div class="nav-menu">
-                <a href="dashboard.html" class="nav-link">Search Orders</a>
-                <!--<a href="admin-users.html" class="nav-link">User Management</a>-->
-                <a href="admin-data.html" class="nav-link active">Data Management</a>
-                <span class="nav-user" id="userEmail"></span>
-                <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
-            </div>
-        </div>
+        <!-- Navigation injected by app.js -->
     </nav>
 
     <main class="container">
         <div class="page-header">
             <h1>Data Management</h1>
-            <p>Upload and manage your orders data. You can either upload previous orders, or add a new record for quoted pricing.</p>
+            <p>Upload and manage your orders data. You can either upload previous orders, or add a new record for quoted
+                pricing.</p>
             <div id="headerMessage" class="message" style="display: none; margin-top: 20px;"></div>
         </div>
 
@@ -81,7 +73,7 @@
                         <p><strong>Size:</strong> <span id="fileSize"></span></p>
                     </div>
                 </div>
-                
+
                 <div class="form-actions" style="margin-top: 20px;">
                     <button class="btn btn-primary" id="appendBtn" disabled>
                         ➕ Append Records
@@ -89,7 +81,7 @@
                     <button class="btn btn-danger" id="replaceBtn" disabled>
                         🔄 Replace All Data
                     </button>
-                     <button class="btn btn-primary" id="uploadInfoBtn">
+                    <button class="btn btn-primary" id="uploadInfoBtn">
                         ℹ️ More Info
                     </button>
                 </div>
@@ -101,7 +93,7 @@
                     <p id="progressText">Uploading... 0%</p>
                 </div>
             </div>
-            
+
             <div class="admin-card">
                 <h3>✍️ Add Record Manually</h3>
                 <form id="manualEntryForm" novalidate>
@@ -161,7 +153,8 @@
                             <tbody id="previewTableBody"></tbody>
                         </table>
                     </div>
-                    <p style="margin-top: 10px;"><strong>Total rows to upload:</strong> <span id="totalRows">0</span></p>
+                    <p style="margin-top: 10px;"><strong>Total rows to upload:</strong> <span id="totalRows">0</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -178,8 +171,10 @@
                 <p>Your CSV file should include the following columns:</p>
                 <ul class="requirements-list">
                     <li><strong>order_id</strong> - Unique identifier from SuperDispatch</li>
-                    <li><strong>pickup_business</strong> - The business name where the vehicle(s) will be picked up.</li>
-                    <li><strong>delivery_business</strong> - The business name where the vehicle(s) will be dropped off.</li>
+                    <li><strong>pickup_business</strong> - The business name where the vehicle(s) will be picked up.
+                    </li>
+                    <li><strong>delivery_business</strong> - The business name where the vehicle(s) will be dropped off.
+                    </li>
                     <li><strong>origin_city</strong> - Origin city and state (e.g., "Los Angeles, CA")</li>
                     <li><strong>destination_city</strong> - Destination city and state (e.g., "New York, NY")</li>
                     <li><strong>carrier</strong> - Carrier name</li>
@@ -210,6 +205,8 @@
     </div>
 
     <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/app.js"></script>
     <script type="module" src="js/data-management.js"></script>
 </body>
+
 </html>

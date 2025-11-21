@@ -1,19 +1,59 @@
-import { createClient, APP_VERSION } from './config.js';
+import { APP_VERSION, SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
-// Initialize Supabase client
-const supabase = createClient();
+let supabase = null;
+let isReady = false;
+let readyResolve = null;
 
-export async function initApp() {
-    if (!supabase) {
-        console.error('Supabase not initialized');
-        return;
+// Export a promise that resolves when the app is fully initialized
+export const ready = new Promise((resolve) => {
+    readyResolve = resolve;
+});
+
+// Auto-initialize when imported
+(async function init() {
+    try {
+        // 1. Load Supabase
+        await loadSupabase();
+
+        // 2. Initialize Client
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 3. Render Navigation
+        initNav();
+
+        // 4. Check Authentication
+        await checkAuth();
+
+        // 5. Mark as ready
+        isReady = true;
+        if (readyResolve) readyResolve(supabase);
+
+    } catch (error) {
+        console.error('App initialization failed:', error);
     }
+})();
 
-    // Initialize Navigation
-    initNav();
+// Helper to load Supabase CDN
+function loadSupabase() {
+    return new Promise((resolve, reject) => {
+        if (window.supabase) {
+            resolve();
+            return;
+        }
 
-    // Check Authentication
-    await checkAuth();
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load Supabase SDK'));
+        document.head.appendChild(script);
+    });
+}
+
+// Export getter for other modules
+export async function getSupabase() {
+    if (isReady && supabase) return supabase;
+    await ready;
+    return supabase;
 }
 
 function initNav() {
@@ -85,7 +125,7 @@ async function handleLogout() {
     }
 }
 
-async function checkIsAdmin(userId) {
+export async function checkIsAdmin(userId) {
     try {
         const { data, error } = await supabase
             .from('user_roles')

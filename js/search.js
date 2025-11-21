@@ -2,8 +2,7 @@
 // Search Module
 // ====================================
 
-import { createClient } from './config.js';
-import { checkIsAdmin } from './auth.js';
+import { getSupabase, checkIsAdmin } from './app.js';
 
 const columnMapping = {
     'order_id': 'Order ID',
@@ -25,68 +24,32 @@ let allResults = []; // historical results
 let manResults = []; // manual entry results
 let currentPage = 1;
 const recordsPerPage = 50;
+let currentSort = { column: 'order_date', direction: 'desc' };
 
-// Load Supabase from CDN
-const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-script.onload = () => {
-    supabase = createClient();
-    init();
-};
-document.head.appendChild(script);
+// Initialize
+init();
 
-function init() {
+async function init() {
+    // Wait for app to be ready and get supabase client
+    supabase = await getSupabase();
+
     if (!supabase) {
         alert('Supabase configuration error. Please check your credentials.');
         return;
     }
 
-    // Check authentication
-    checkAuth();
-
     // Setup event listeners
     const searchForm = document.getElementById('searchForm');
     const clearBtn = document.getElementById('clearBtn');
     const exportBtn = document.getElementById('exportBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
 
     if (searchForm) searchForm.addEventListener('submit', handleSearch);
     if (clearBtn) clearBtn.addEventListener('click', handleClear);
     if (exportBtn) exportBtn.addEventListener('click', exportToCSV);
-    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     if (prevBtn) prevBtn.addEventListener('click', () => changePage(-1));
     if (nextBtn) nextBtn.addEventListener('click', () => changePage(1));
-
-    // Setup table sorting
-    // Setup table sorting
-    // setupTableSorting(); // Called after table generation now
-}
-
-async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    // Display user email
-    const userEmailElement = document.getElementById('userEmail');
-    if (userEmailElement) {
-        userEmailElement.textContent = session.user.email;
-    }
-
-    // Check admin status
-    const isAdmin = await checkIsAdmin(session.user.id);
-    const userMgmtLink = document.getElementById('userMgmtLink');
-    const dataMgmtLink = document.getElementById('dataMgmtLink');
-
-    if (isAdmin) {
-        if (userMgmtLink) userMgmtLink.style.display = 'inline-block';
-        if (dataMgmtLink) dataMgmtLink.style.display = 'inline-block';
-    }
 }
 
 async function handleSearch(e) {
@@ -200,7 +163,7 @@ function displayResults() {
     allResults.forEach(order => {
         const price = parseFloat(order.price) || 0;
         const vehicleCnt = parseInt(order.vehicle_cnt, 10) || 0;
-        const inopVal = order.inop_info.toLocaleString();
+        const inopVal = order.inop_info ? order.inop_info.toLocaleString() : '';
         if (inopVal.includes('Y')) {
             inopPriceSum += price;
             inopPriceCount += 1;
@@ -348,11 +311,6 @@ function exportToCSV() {
     window.URL.revokeObjectURL(url);
 }
 
-async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = 'index.html';
-}
-
 function displayManualResults() {
     if (manResults.length === 0) return;
 
@@ -387,4 +345,33 @@ function displayManualResults() {
 
     document.getElementById('totalRows').textContent = manResults.length.toLocaleString();
     previewSection.style.display = 'block';
+}
+
+function formatValue(col, value) {
+    if (value === null || value === undefined) return '';
+    if (col === 'price' || col === 'price_per_mile') {
+        return '$' + parseFloat(value).toFixed(2);
+    }
+    if (col === 'order_date') {
+        return new Date(value).toLocaleDateString();
+    }
+    return value;
+}
+
+function handleClear() {
+    document.getElementById('searchForm').reset();
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('noResults').style.display = 'none';
+    document.getElementById('previewSection').style.display = 'none';
+    allResults = [];
+    manResults = [];
+}
+
+function changePage(delta) {
+    const totalPages = Math.ceil(allResults.length / recordsPerPage);
+    const newPage = currentPage + delta;
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        displayTablePage();
+    }
 }
