@@ -79,8 +79,18 @@ async function handleSearch(e) {
 
     try {
         // Build query
-        let query_historical = supabase.from('historical_order_rollup').select('*');
-        let query_manual = supabase.from('manual_orders').select('*');
+        let query_historical = supabase.from('historical_order_rollup').select(`
+                                                                                order_id,carrier,
+                                                                                pickup_business,origin_city,origin_state,origin_zip,
+                                                                                delivery_business,destination_city,destination_state,destination_zip,
+                                                                                inop_info,order_date,vehicle_cnt,price,distance
+                                                                                `);
+        let query_manual = supabase.from('manual_orders').select(`
+                                                                    pickup_business,origin_city,
+                                                                    delivery_business,destination_city,
+                                                                    distance,lo_price,hi_price,inop_price,
+                                                                    valid_date                                                                                
+                                                                `);
 
         if (pickupBusiness) {
             query_historical = query_historical.ilike('pickup_business', `%${pickupBusiness}%`);
