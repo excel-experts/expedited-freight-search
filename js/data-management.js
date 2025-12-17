@@ -326,10 +326,10 @@ function displayPreview() {
 
     // Define DB fields for mapping options
     const dbFields = [
-        'order_id', 'pickup_business', 'delivery_business', 'pickup_city',
-        'pickup_state', 'pickup_zip', 'delivery_city', 'delivery_state',
-        'delivery_zip', 'carrier', 'inop_info', 'price', 'distance',
-        'price_per_mile', 'order_date'
+        'order_id', 'order_date', 'carrier', 'inop_info', 'price', 'distance',
+        'pickup_business', 'pickup_city', 'pickup_state', 'pickup_zip',
+        'delivery_business', 'delivery_city', 'delivery_state', 'delivery_zip',
+        'price_per_mile'
     ];
 
     // Display headers
