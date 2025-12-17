@@ -102,16 +102,16 @@
                         <input type="text" id="pickup_business" name="pickup_business" required>
                     </div>
                     <div class="form-group">
-                        <label for="origin_city">Origin City</label>
-                        <input type="text" id="origin_city" name="origin_city" required>
+                        <label for="pickup_city">Pickup City</label>
+                        <input type="text" id="pickup_city" name="pickup_city" required>
                     </div>
                     <div class="form-group">
                         <label for="delivery_business">Delivery Business</label>
                         <input type="text" id="delivery_business" name="delivery_business" required>
                     </div>
                     <div class="form-group">
-                        <label for="destination_city">Destination City</label>
-                        <input type="text" id="destination_city" name="destination_city" required>
+                        <label for="delivery_city">Delivery City</label>
+                        <input type="text" id="delivery_city" name="delivery_city" required>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -147,16 +147,17 @@
                 <h3>🗃️ Data Preview</h3>
                 <div id="previewSection" style="display: none; margin-top: 20px;">
                     <h4>Step 2. Map the CSV Columns to the Database.</h4>
-                    
+
                     <div class="table-container" style="max-height: 400px; overflow-y: auto;">
                         <table class="data-table" id="previewTable">
                             <thead id="previewTableHead" style="position: sticky; top: 0; z-index: 10;"></thead>
                             <tbody id="previewTableBody"></tbody>
                         </table>
                     </div>
-                    
+
                     <!-- Pagination Controls -->
-                    <div class="pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <div class="pagination"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
                         <span id="pageInfo"></span>
                         <div style="display: flex; gap: 10px;">
                             <button id="prevPageBtn" class="btn btn-secondary btn-sm">Previous</button>
@@ -186,8 +187,8 @@
                     </li>
                     <li><strong>delivery_business</strong> - The business name where the vehicle(s) will be dropped off.
                     </li>
-                    <li><strong>origin_city</strong> - Origin city and state (e.g., "Los Angeles, CA")</li>
-                    <li><strong>destination_city</strong> - Destination city and state (e.g., "New York, NY")</li>
+                    <li><strong>pickup_city</strong> - Pickup city and state (e.g., "Los Angeles, CA")</li>
+                    <li><strong>delivery_city</strong> - Delivery city and state (e.g., "New York, NY")</li>
                     <li><strong>carrier</strong> - Carrier name</li>
                     <li><strong>price</strong> - Shipment price (numeric)</li>
                     <li><strong>distance</strong> - Distance in miles (numeric)</li>

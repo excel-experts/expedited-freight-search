@@ -7,9 +7,9 @@ import { getSupabase, checkIsAdmin } from './app.js';
 const columnMapping = {
     'order_id': 'Order ID',
     'pickup_business': 'Pickup Business',
-    'origin': 'Origin',
+    'pickup': 'Pickup',
     'delivery_business': 'Delivery Business',
-    'destination': 'Destination',
+    'delivery': 'Delivery',
     'carrier': 'Carrier',
     'inop_info': 'INOP',
     'vehicle_cnt': '# Autos',
@@ -57,17 +57,17 @@ async function handleSearch(e) {
 
     const pickupBusiness = document.getElementById('pickupBusiness').value.trim();
     const deliveryBusiness = document.getElementById('deliveryBusiness').value.trim();
-    const originCity = document.getElementById('originCity').value.trim();
-    const originState = document.getElementById('originState').value.trim();
-    const originZip = document.getElementById('originZip').value.trim();
-    const destinationCity = document.getElementById('destinationCity').value.trim();
-    const destinationState = document.getElementById('destinationState').value.trim();
-    const destinationZip = document.getElementById('destinationZip').value.trim();
+    const pickupCity = document.getElementById('pickupCity').value.trim();
+    const pickupState = document.getElementById('pickupState').value.trim();
+    const pickupZip = document.getElementById('pickupZip').value.trim();
+    const deliveryCity = document.getElementById('deliveryCity').value.trim();
+    const deliveryState = document.getElementById('deliveryState').value.trim();
+    const deliveryZip = document.getElementById('deliveryZip').value.trim();
     const carrier = document.getElementById('carrier').value.trim();
     const inopInfo = document.getElementById('inopInfo').value.trim();
 
     // At least one field must be filled
-    if (!pickupBusiness && !deliveryBusiness && !originCity && !originZip && !destinationCity && !destinationZip && !carrier) {
+    if (!pickupBusiness && !deliveryBusiness && !pickupCity && !pickupZip && !deliveryCity && !deliveryZip && !carrier) {
         alert('Please enter at least one required search criteria');
         return;
     }
@@ -81,13 +81,13 @@ async function handleSearch(e) {
         // Build query
         let query_historical = supabase.from('historical_order_rollup').select(`
                                                                                 order_id,carrier,
-                                                                                pickup_business,origin_city,origin_state,origin_zip,
-                                                                                delivery_business,destination_city,destination_state,destination_zip,
+                                                                                pickup_business,pickup_city,pickup_state,pickup_zip,
+                                                                                delivery_business,delivery_city,delivery_state,delivery_zip,
                                                                                 inop_info,order_date,vehicle_cnt,price,distance
                                                                                 `);
         let query_manual = supabase.from('manual_orders').select(`
-                                                                    pickup_business,origin_city,
-                                                                    delivery_business,destination_city,
+                                                                    pickup_business,pickup_city,
+                                                                    delivery_business,delivery_city,
                                                                     distance,lo_price,hi_price,inop_price,
                                                                     valid_date                                                                                
                                                                 `);
@@ -100,25 +100,25 @@ async function handleSearch(e) {
             query_historical = query_historical.ilike('delivery_business', `%${deliveryBusiness}%`);
             query_manual = query_manual.ilike('delivery_business', `%${deliveryBusiness}%`);
         }
-        if (originCity) {
-            query_historical = query_historical.ilike('origin_city', `%${originCity}%`);
-            query_manual = query_manual.ilike('origin_city', `%${originCity}%`);
+        if (pickupCity) {
+            query_historical = query_historical.ilike('pickup_city', `%${pickupCity}%`);
+            query_manual = query_manual.ilike('pickup_city', `%${pickupCity}%`);
         }
-        if (originState) {
-            query_historical = query_historical.ilike('origin_State', `%${originState}%`);
+        if (pickupState) {
+            query_historical = query_historical.ilike('pickup_State', `%${pickupState}%`);
         }
-        if (originZip) {
-            query_historical = query_historical.ilike('origin_Zip', `%${originZip}%`);
+        if (pickupZip) {
+            query_historical = query_historical.ilike('pickup_Zip', `%${pickupZip}%`);
         }
-        if (destinationCity) {
-            query_historical = query_historical.ilike('destination_city', `%${destinationCity}%`);
-            query_manual = query_manual.ilike('destination_city', `%${destinationCity}%`);
+        if (deliveryCity) {
+            query_historical = query_historical.ilike('delivery_city', `%${deliveryCity}%`);
+            query_manual = query_manual.ilike('delivery_city', `%${deliveryCity}%`);
         }
-        if (destinationState) {
-            query_historical = query_historical.ilike('destination_state', `%${destinationState}%`);
+        if (deliveryState) {
+            query_historical = query_historical.ilike('delivery_state', `%${deliveryState}%`);
         }
-        if (destinationZip) {
-            query_historical = query_historical.ilike('destination_zip', `%${destinationZip}%`);
+        if (deliveryZip) {
+            query_historical = query_historical.ilike('delivery_zip', `%${deliveryZip}%`);
         }
         if (carrier) {
             query_historical = query_historical.ilike('carrier', `%${carrier}%`);
@@ -166,24 +166,24 @@ function processResults() {
 
     allResults.forEach(record => {
         try {
-            // Combine Origin
-            const originParts = [];
-            if (record.origin_city) originParts.push(record.origin_city);
-            if (record.origin_state) originParts.push(record.origin_state);
-            if (record.origin_zip) originParts.push(record.origin_zip);
+            // Combine Pickup
+            const pickupParts = [];
+            if (record.pickup_city) pickupParts.push(record.pickup_city);
+            if (record.pickup_state) pickupParts.push(record.pickup_state);
+            if (record.pickup_zip) pickupParts.push(record.pickup_zip);
 
-            if (originParts.length > 0) {
-                record.origin = originParts.join(', ');
+            if (pickupParts.length > 0) {
+                record.pickup = pickupParts.join(', ');
             }
 
-            // Combine Destination
+            // Combine Delivery
             const destParts = [];
-            if (record.destination_city) destParts.push(record.destination_city);
-            if (record.destination_state) destParts.push(record.destination_state);
-            if (record.destination_zip) destParts.push(record.destination_zip);
+            if (record.delivery_city) destParts.push(record.delivery_city);
+            if (record.delivery_state) destParts.push(record.delivery_state);
+            if (record.delivery_zip) destParts.push(record.delivery_zip);
 
             if (destParts.length > 0) {
-                record.destination = destParts.join(', ');
+                record.delivery = destParts.join(', ');
             }
 
         } catch (err) {

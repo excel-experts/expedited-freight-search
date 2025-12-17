@@ -5,7 +5,7 @@ A web-based application for searching and managing historical freight orders. Bu
 ## Features
 
 - 🔐 **User Authentication** - Secure login using Supabase Auth
-- 🔍 **Advanced Search** - Search orders by origin, destination, and carrier
+- 🔍 **Advanced Search** - Search orders by pickup, delivery, and carrier
 - 📊 **Analytics** - View aggregate metrics like average price and distance per mile
 - 👥 **User Management** - Admin interface for managing user accounts and roles
 - 📤 **Data Upload** - Import orders from CSV or JSON files
@@ -25,7 +25,7 @@ A web-based application for searching and managing historical freight orders. Bu
 
 1. **Login**: Navigate to the application URL and enter your credentials
 2. **Search Orders**:
-   - Enter at least one search criteria (Origin, Destination, or Carrier)
+   - Enter at least one search criteria (Pickup, Delivery, or Carrier)
    - Click "Search Orders"
    - View results with aggregate metrics
 3. **Export Data**: Click "Export to CSV" to download search results

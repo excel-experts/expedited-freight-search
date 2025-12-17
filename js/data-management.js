@@ -162,8 +162,8 @@ function parseCSV(csvText) {
 
         // Default columns we expect
         const defaultColumns = [
-            'order_id', 'pickup_business', 'delivery_business', 'origin_city',
-            'destination_city', 'carrier', 'price', 'distance', 'order_date'
+            'order_id', 'pickup_business', 'delivery_business', 'pickup_city',
+            'delivery_city', 'carrier', 'price', 'distance', 'order_date'
         ];
 
         // Auto-select corresponding columns
@@ -320,9 +320,9 @@ function displayPreview() {
 
     // Define DB fields for mapping options
     const dbFields = [
-        'order_id', 'pickup_business', 'delivery_business', 'origin_city',
-        'origin_state', 'origin_zip', 'destination_city', 'destination_state',
-        'destination_zip', 'carrier', 'inop_info', 'price', 'distance',
+        'order_id', 'pickup_business', 'delivery_business', 'pickup_city',
+        'pickup_state', 'pickup_zip', 'delivery_city', 'delivery_state',
+        'delivery_zip', 'carrier', 'inop_info', 'price', 'distance',
         'price_per_mile', 'order_date'
     ];
 
