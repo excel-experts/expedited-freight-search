@@ -168,13 +168,13 @@ function parseCSV(csvText) {
 
         // Auto-select corresponding columns
         selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));
-        
+
         // Auto-map columns if they match exact names
         columnMapping = {};
         defaultColumns.forEach(dbCol => {
-           if (allHeaders.includes(dbCol)) {
-               columnMapping[dbCol] = dbCol;
-           }
+            if (allHeaders.includes(dbCol)) {
+                columnMapping[dbCol] = dbCol;
+            }
         });
 
         displayColumnSelection(allHeaders);
@@ -199,11 +199,11 @@ function parseJSON(jsonText) {
             return row;
         });
 
-         // Simple default mapping for JSON (assuming keys match db fields)
-         const allKeys = Object.keys(parsedData[0] || {});
-         selectedColumns = allKeys;
-         columnMapping = {};
-         allKeys.forEach(k => columnMapping[k] = k);
+        // Simple default mapping for JSON (assuming keys match db fields)
+        const allKeys = Object.keys(parsedData[0] || {});
+        selectedColumns = allKeys;
+        columnMapping = {};
+        allKeys.forEach(k => columnMapping[k] = k);
 
         displayColumnSelection(allKeys);
         validateAndPreview();
@@ -257,15 +257,15 @@ function displayColumnSelection(allHeaders) {
 // Validation Logic
 function validateAndPreview() {
     validationErrors = [];
-    
+
     parsedData.forEach((row, index) => {
         const errors = {};
-        
+
         // Check Price (if mapped)
         if (row.price && isNaN(parseFloat(row.price))) {
             errors['price'] = 'Price must be a number';
         }
-        
+
         // Check Distance (if mapped)
         if (row.distance && isNaN(parseFloat(row.distance))) {
             errors['distance'] = 'Distance must be a number';
@@ -273,14 +273,14 @@ function validateAndPreview() {
 
         // Check Date (basic check)
         if (row.order_date && isNaN(Date.parse(row.order_date))) {
-          errors['order_date'] = 'Invalid date format';
+            errors['order_date'] = 'Invalid date format';
         }
-        
+
         // Required fields check (simplified)
         // In a real scenario, we'd check against componentMapping to see what IS mapped
         // For now, let's just check raw CSV data if it looks like the right column
         if (!row.order_id && !row.id) { // loose check
-             // errors['order_id'] = 'Missing ID'; // Optional depending on strictness
+            // errors['order_id'] = 'Missing ID'; // Optional depending on strictness
         }
 
         if (Object.keys(errors).length > 0) {
@@ -305,7 +305,7 @@ function displayPreview() {
     const totalRows = parsedData.length;
     const invalidCount = validationErrors.length;
     const validCount = totalRows - invalidCount;
-    
+
     if (invalidCount > 0) {
         validationSummaryDiv.className = 'validation-summary validation-invalid';
         validationSummaryDiv.innerHTML = `<span>⚠️ Found ${invalidCount} rows with issues.</span> <span>${validCount} valid rows.</span>`;
@@ -356,21 +356,21 @@ function displayPreview() {
     const visibleRows = parsedData.slice(startIdx, endIdx);
 
     previewTableBody.innerHTML = '';
-    
+
     visibleRows.forEach((row, loopIndex) => {
         const actualIndex = startIdx + loopIndex;
         const rowErrors = validationErrors.find(e => e.rowIndex === actualIndex)?.errors;
-        
+
         const tr = document.createElement('tr');
-        
+
         tr.innerHTML = columnsToShow.map(col => {
             const value = row[col] !== undefined && row[col] !== null ? row[col] : '';
             const errorMsg = rowErrors && rowErrors[col] ? rowErrors[col] : null;
             const classAttr = errorMsg ? 'class="invalid-cell" title="' + errorMsg + '"' : '';
-            
+
             return `<td ${classAttr}>${value}</td>`;
         }).join('');
-        
+
         previewTableBody.appendChild(tr);
     });
 
@@ -448,7 +448,7 @@ async function executeUpload() {
 
         // PREPARATION PHASE
         updateProgress(10, 'Preparing data...');
-        
+
         // Map data to DB structure
         const dataToUpload = parsedData.map(row => {
             let newRow = {};
@@ -465,7 +465,7 @@ async function executeUpload() {
             // Ensure numeric
             if (newRow.price) newRow.price = parseFloat(newRow.price);
             if (newRow.distance) newRow.distance = parseFloat(newRow.distance);
-            
+
             return newRow;
         });
 
@@ -495,10 +495,21 @@ async function executeUpload() {
                 if (!error) {
                     success = true;
                 } else {
-                    console.warn(`Batch ${i+1} attempt ${attempts} failed:`, error);
+                    console.warn(`Batch ${i + 1} attempt ${attempts} failed:`, error);
                     if (attempts === maxAttempts) {
                         // All attempts failed, add to failure list
-                        rawBatch.forEach(r => failedRecords.push({ ...r, _error: error.message }));
+                        rawBatch.forEach(r => {
+                            const filteredRow = {};
+                            // Only include selected columns
+                            selectedColumns.forEach(col => {
+                                if (r[col] !== undefined) {
+                                    filteredRow[col] = r[col];
+                                }
+                            });
+                            // Add error message
+                            filteredRow._error = error.message;
+                            failedRecords.push(filteredRow);
+                        });
                     } else {
                         // Wait before retry
                         await new Promise(r => setTimeout(r, 1000 * attempts));
@@ -509,7 +520,7 @@ async function executeUpload() {
 
         // COMPLETION PHASE
         updateProgress(100, 'Process complete.');
-        
+
         if (failedRecords.length > 0) {
             // Partial Success
             const successCount = dataToUpload.length - failedRecords.length;
@@ -562,7 +573,7 @@ function downloadFailedRecords(records) {
     a.download = `failed_records_${new Date().getTime()}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    
+
     alert('A CSV file containing the failed records has been downloaded. Please correct the errors and re-upload.');
 }
 
@@ -612,7 +623,7 @@ async function downloadAllData() {
         const headers = Object.keys(data[0]);
         const csvRows = [headers.join(',')];
         data.forEach(row => {
-            csvRows.push(headers.map(h => `"${row[h]||''}"`).join(','));
+            csvRows.push(headers.map(h => `"${row[h] || ''}"`).join(','));
         });
         const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
@@ -626,9 +637,9 @@ async function downloadAllData() {
         alert('Error downloading: ' + error.message);
     } finally {
         const btn = document.getElementById('downloadAllBtn');
-        if(btn) {
-           btn.disabled = false;
-           btn.textContent = '📥 Download All Data (CSV)';
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📥 Download All Data (CSV)';
         }
     }
 }
@@ -637,13 +648,13 @@ function showMessage(message, type) {
     const modal = document.getElementById('messageModal');
     const title = document.getElementById('messageTitle');
     const content = document.getElementById('messageContent');
-    if(title) title.textContent = type === 'error' ? '❌ Error' : '✅ Success';
-    if(content) content.textContent = message;
-    if(modal) {
+    if (title) title.textContent = type === 'error' ? '❌ Error' : '✅ Success';
+    if (content) content.textContent = message;
+    if (modal) {
         modal.style.display = 'flex';
         // Only auto-close success messages, leave errors open
         if (type === 'success') {
-             setTimeout(() => { if (modal.style.display === 'flex') hideModal('messageModal'); }, 3000);
+            setTimeout(() => { if (modal.style.display === 'flex') hideModal('messageModal'); }, 3000);
         }
     }
 }
