@@ -146,13 +146,24 @@
             <div class="admin-card">
                 <h3>🗃️ Data Preview</h3>
                 <div id="previewSection" style="display: none; margin-top: 20px;">
-                    <h4>Step 2. Map the CSV Columns to the Database. (First 10 rows)</h4>
-                    <div class="table-container" style="max-height: 300px;">
+                    <h4>Step 2. Map the CSV Columns to the Database.</h4>
+                    
+                    <div class="table-container" style="max-height: 400px; overflow-y: auto;">
                         <table class="data-table" id="previewTable">
-                            <thead id="previewTableHead"></thead>
+                            <thead id="previewTableHead" style="position: sticky; top: 0; z-index: 10;"></thead>
                             <tbody id="previewTableBody"></tbody>
                         </table>
                     </div>
+                    
+                    <!-- Pagination Controls -->
+                    <div class="pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <span id="pageInfo"></span>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="prevPageBtn" class="btn btn-secondary btn-sm">Previous</button>
+                            <button id="nextPageBtn" class="btn btn-secondary btn-sm">Next</button>
+                        </div>
+                    </div>
+
                     <p style="margin-top: 10px;"><strong>Total rows to upload:</strong> <span id="totalRows">0</span>
                     </p>
                 </div>

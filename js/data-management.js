@@ -2,11 +2,16 @@
 // Data Management Module (Admin Only) 
 // ====================================
 
-import { getSupabase, checkIsAdmin } from './app.js';
+import { getSupabase } from './app.js';
 
 let supabase;
 let parsedData = [];
 let uploadMode = '';
+
+// Pagination & Validation State
+let currentPage = 1;
+const PAGE_SIZE = 10;
+let validationErrors = []; // Array of error objects { rowIndex, errors: { col: msg } }
 
 // Initialize
 init();
@@ -20,15 +25,7 @@ async function init() {
         return;
     }
 
-    // Check authentication and admin status
-    // Note: app.js already checks auth and admin status for admin pages, 
-    // but we might want to load stats here if check passes.
-    // However, since app.js handles the redirect, we can assume if we are here, we are good?
-    // Actually, app.js checkAuth is async, so we should verify if we need to wait or re-check.
-    // app.js initApp awaits checkAuth. Since we await getSupabase which awaits ready, 
-    // auth check should be complete.
-
-    // But we need to load stats specifically for this page.
+    // Load initial stats
     await loadStats();
 
     // Setup event listeners
@@ -65,15 +62,16 @@ async function init() {
     if (closeMessageModal) closeMessageModal.addEventListener('click', () => hideModal('messageModal'));
     if (messageOk) messageOk.addEventListener('click', () => hideModal('messageModal'));
 
+    // Pagination Listeners
+    document.getElementById('prevPageBtn')?.addEventListener('click', () => changePage(-1));
+    document.getElementById('nextPageBtn')?.addEventListener('click', () => changePage(1));
+
     // Close modal on outside click
     window.addEventListener('click', (e) => {
-        // Check if the clicked element has the class "modal"
         if (e.target.classList.contains('modal')) {
-            // Call a function to hide the clicked modal
             hideModal(e.target.id);
         }
     });
-
 }
 
 async function loadStats() {
@@ -84,10 +82,7 @@ async function loadStats() {
     if (statsContent) statsContent.style.display = 'none';
 
     try {
-
-        // Fetch stats via RPC call
-        const { data: blankCounts, error: blankCountsError } = await supabase
-            .rpc('get_stat_counts');
+        const { data: blankCounts, error: blankCountsError } = await supabase.rpc('get_stat_counts');
 
         if (blankCountsError) {
             throw blankCountsError;
@@ -117,7 +112,6 @@ async function loadStats() {
 
 function handleFileSelect(e) {
     const file = e.target.files[0];
-
     if (!file) return;
 
     const fileName = file.name;
@@ -127,7 +121,6 @@ function handleFileSelect(e) {
     document.getElementById('fileSize').textContent = fileSize;
     document.getElementById('fileInfo').style.display = 'block';
 
-    // Parse file
     const reader = new FileReader();
 
     if (fileName.endsWith('.csv')) {
@@ -141,15 +134,11 @@ function handleFileSelect(e) {
         return;
     }
 }
-// Store selected columns
-let selectedColumns = [];
 
-// Store csv-to-db mapped columns
+// Store selected columns & mapping
+let selectedColumns = [];
 let columnMapping = {};
 
-function resetColumnMapping() {
-    columnMapping = {};
-}
 function parseCSV(csvText) {
     try {
         const results = Papa.parse(csvText, {
@@ -171,17 +160,25 @@ function parseCSV(csvText) {
         parsedData = results.data;
         const allHeaders = Object.keys(parsedData[0]);
 
-        // Database column names (what your DB expects)
+        // Default columns we expect
         const defaultColumns = [
             'order_id', 'pickup_business', 'delivery_business', 'origin_city',
             'destination_city', 'carrier', 'price', 'distance', 'order_date'
         ];
 
-        // Set selected columns (only include those that exist in the CSV)
+        // Auto-select corresponding columns
         selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));
+        
+        // Auto-map columns if they match exact names
+        columnMapping = {};
+        defaultColumns.forEach(dbCol => {
+           if (allHeaders.includes(dbCol)) {
+               columnMapping[dbCol] = dbCol;
+           }
+        });
 
         displayColumnSelection(allHeaders);
-        displayPreview();
+        validateAndPreview();
 
     } catch (error) {
         console.error('Error parsing CSV:', error);
@@ -189,24 +186,45 @@ function parseCSV(csvText) {
     }
 }
 
+function parseJSON(jsonText) {
+    try {
+        const data = JSON.parse(jsonText);
+        parsedData = Array.isArray(data) ? data : [data];
+
+        // Calculate price_per_mile if not provided
+        parsedData = parsedData.map(row => {
+            if (!row.price_per_mile && row.price && row.distance) {
+                row.price_per_mile = (parseFloat(row.price) / parseFloat(row.distance)).toFixed(2);
+            }
+            return row;
+        });
+
+         // Simple default mapping for JSON (assuming keys match db fields)
+         const allKeys = Object.keys(parsedData[0] || {});
+         selectedColumns = allKeys;
+         columnMapping = {};
+         allKeys.forEach(k => columnMapping[k] = k);
+
+        displayColumnSelection(allKeys);
+        validateAndPreview();
+
+    } catch (error) {
+        console.error('Error parsing JSON:', error);
+        alert('Error parsing JSON file: ' + error.message);
+    }
+}
 
 function displayColumnSelection(allHeaders) {
-    // Create column selection interface
     const previewSection = document.getElementById('previewSection');
-
-    // Check if column selection already exists, if not create it
     let columnSelectionDiv = document.getElementById('columnSelection');
 
     if (!columnSelectionDiv) {
         columnSelectionDiv = document.createElement('div');
         columnSelectionDiv.id = 'columnSelection';
         columnSelectionDiv.style.marginBottom = '20px';
-
-        // Insert before the preview table
         previewSection.insertBefore(columnSelectionDiv, previewSection.firstChild);
     }
 
-    // Build column selection checkboxes
     let html = '<h4>Step 1. Select all columns to import:</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">';
 
     allHeaders.forEach(header => {
@@ -222,7 +240,6 @@ function displayColumnSelection(allHeaders) {
     html += '</div>';
     columnSelectionDiv.innerHTML = html;
 
-    // Add event listeners to checkboxes
     document.querySelectorAll('.column-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', (e) => {
             if (e.target.checked) {
@@ -237,12 +254,66 @@ function displayColumnSelection(allHeaders) {
     });
 }
 
+// Validation Logic
+function validateAndPreview() {
+    validationErrors = [];
+    
+    parsedData.forEach((row, index) => {
+        const errors = {};
+        
+        // Check Price (if mapped)
+        if (row.price && isNaN(parseFloat(row.price))) {
+            errors['price'] = 'Price must be a number';
+        }
+        
+        // Check Distance (if mapped)
+        if (row.distance && isNaN(parseFloat(row.distance))) {
+            errors['distance'] = 'Distance must be a number';
+        }
+
+        // Check Date (basic check)
+        if (row.order_date && isNaN(Date.parse(row.order_date))) {
+          errors['order_date'] = 'Invalid date format';
+        }
+        
+        // Required fields check (simplified)
+        // In a real scenario, we'd check against componentMapping to see what IS mapped
+        // For now, let's just check raw CSV data if it looks like the right column
+        if (!row.order_id && !row.id) { // loose check
+             // errors['order_id'] = 'Missing ID'; // Optional depending on strictness
+        }
+
+        if (Object.keys(errors).length > 0) {
+            validationErrors.push({ rowIndex: index, errors });
+        }
+    });
+
+    currentPage = 1;
+    displayPreview();
+}
+
+
 function displayPreview() {
     if (parsedData.length === 0) return;
 
     const previewSection = document.getElementById('previewSection');
     const previewTableHead = document.getElementById('previewTableHead');
     const previewTableBody = document.getElementById('previewTableBody');
+    const validationSummaryDiv = document.getElementById('validationSummary') || createValidationSummary(previewSection);
+
+    // Validation Summary
+    const totalRows = parsedData.length;
+    const invalidCount = validationErrors.length;
+    const validCount = totalRows - invalidCount;
+    
+    if (invalidCount > 0) {
+        validationSummaryDiv.className = 'validation-summary validation-invalid';
+        validationSummaryDiv.innerHTML = `<span>⚠️ Found ${invalidCount} rows with issues.</span> <span>${validCount} valid rows.</span>`;
+    } else {
+        validationSummaryDiv.className = 'validation-summary validation-valid';
+        validationSummaryDiv.innerHTML = `<span>✅ All ${totalRows} rows look valid.</span>`;
+    }
+
 
     // Use selected columns or all columns if none selected
     const columnsToShow = selectedColumns.length > 0 ? selectedColumns : Object.keys(parsedData[0]);
@@ -263,15 +334,15 @@ function displayPreview() {
                 `<option value="${field}" ${field === currentMapping ? 'selected' : ''}>${field}</option>`
             ).join('');
 
-            return `<th>${col}<br/><select data-csv-col="${col}">
+            return `<th>${col}<br/><select data-csv-col="${col}" class="map-select">
                     <option value="">map column</option>
                     ${options}
                 </select></th>`;
         }).join('') +
         '</tr>';
 
-    // Add event listeners to all selects after rendering
-    document.querySelectorAll('select[data-csv-col]').forEach(select => {
+    // Add event listeners to select mapping
+    document.querySelectorAll('.map-select').forEach(select => {
         select.addEventListener('change', function () {
             const csvCol = this.getAttribute('data-csv-col');
             const dbField = this.value;
@@ -279,20 +350,33 @@ function displayPreview() {
         });
     });
 
-    // Display first 10 rows
-    previewTableBody.innerHTML = '';
-    const previewRows = parsedData.slice(0, 10);
+    // Pagination Logic
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const endIdx = Math.min(startIdx + PAGE_SIZE, parsedData.length);
+    const visibleRows = parsedData.slice(startIdx, endIdx);
 
-    previewRows.forEach(row => {
+    previewTableBody.innerHTML = '';
+    
+    visibleRows.forEach((row, loopIndex) => {
+        const actualIndex = startIdx + loopIndex;
+        const rowErrors = validationErrors.find(e => e.rowIndex === actualIndex)?.errors;
+        
         const tr = document.createElement('tr');
+        
         tr.innerHTML = columnsToShow.map(col => {
             const value = row[col] !== undefined && row[col] !== null ? row[col] : '';
-            return `<td>${value}</td>`;
+            const errorMsg = rowErrors && rowErrors[col] ? rowErrors[col] : null;
+            const classAttr = errorMsg ? 'class="invalid-cell" title="' + errorMsg + '"' : '';
+            
+            return `<td ${classAttr}>${value}</td>`;
         }).join('');
+        
         previewTableBody.appendChild(tr);
     });
 
-    document.getElementById('totalRows').textContent = parsedData.length.toLocaleString();
+    // Update Pagination Controls
+    updatePaginationControls(startIdx, endIdx, totalRows);
+
     previewSection.style.display = 'block';
 
     // Enable upload buttons
@@ -300,36 +384,36 @@ function displayPreview() {
     document.getElementById('replaceBtn').disabled = false;
 }
 
-
-function parseJSON(jsonText) {
-    try {
-        const data = JSON.parse(jsonText);
-        parsedData = Array.isArray(data) ? data : [data];
-
-        // Calculate price_per_mile if not provided
-        parsedData = parsedData.map(row => {
-            if (!row.price_per_mile && row.price && row.distance) {
-                row.price_per_mile = (parseFloat(row.price) / parseFloat(row.distance)).toFixed(2);
-            }
-            return row;
-        });
-
-        displayPreview();
-
-    } catch (error) {
-        console.error('Error parsing JSON:', error);
-        alert('Error parsing JSON file: ' + error.message);
-    }
+function createValidationSummary(parent) {
+    const div = document.createElement('div');
+    div.id = 'validationSummary';
+    // Insert after header but before table
+    const tableContainer = parent.querySelector('.table-container');
+    parent.insertBefore(div, tableContainer);
+    return div;
 }
 
-// Show the Requirements List Modal for Uploading a new CSV
+function updatePaginationControls(start, end, total) {
+    const info = document.getElementById('pageInfo');
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn'); // Assuming these exist now
+
+    if (info) info.textContent = `Showing rows ${start + 1}-${end} of ${total}`;
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = end >= total;
+}
+
+function changePage(delta) {
+    currentPage += delta;
+    displayPreview();
+}
+
 function showUploadInfo() {
     document.getElementById('requireModal').style.display = 'flex';
 }
 
 function confirmUpload(mode) {
     uploadMode = mode;
-
     const message = mode === 'append'
         ? `Are you sure you want to append ${parsedData.length} records to the existing data?`
         : `⚠️ WARNING: This will delete ALL existing records and replace them with ${parsedData.length} new records. This action cannot be undone. Are you sure?`;
@@ -337,30 +421,35 @@ function confirmUpload(mode) {
     document.getElementById('confirmMessage').textContent = message;
     document.getElementById('confirmModal').style.display = 'flex';
 }
+
+// ---------------------------------------------------------
+//  Improved Upload Logic
+// ---------------------------------------------------------
 async function executeUpload() {
     hideModal('confirmModal');
 
-    // Show progress
-    document.getElementById('uploadProgress').style.display = 'block';
+    const progressSection = document.getElementById('uploadProgress');
+    progressSection.style.display = 'block';
 
     document.getElementById('appendBtn').disabled = true;
     document.getElementById('replaceBtn').disabled = true;
 
     try {
-        // If replace mode, delete all existing records first
+        // DELETE PHASE (If Replace)
         if (uploadMode === 'replace') {
-            updateProgress(10, 'Deleting existing records...');
-
+            updateProgress(5, 'Deleting existing records...');
             const { error: deleteError } = await supabase
                 .from('historical_orders')
                 .delete()
-                .neq('id', '00000000-0000-0000-0000-000000000000');
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all safe guard
 
             if (deleteError) throw deleteError;
         }
 
-
-        // Map CSV columns to database fields using global columnMapping
+        // PREPARATION PHASE
+        updateProgress(10, 'Preparing data...');
+        
+        // Map data to DB structure
         const dataToUpload = parsedData.map(row => {
             let newRow = {};
             for (let csvCol in columnMapping) {
@@ -369,160 +458,178 @@ async function executeUpload() {
                     newRow[dbField] = row[csvCol];
                 }
             }
-            // Calculate price_per_mile if not present:
+            // Auto-calc logic
             if (!newRow.price_per_mile && newRow.price && newRow.distance) {
                 newRow.price_per_mile = (parseFloat(newRow.price) / parseFloat(newRow.distance)).toFixed(2);
             }
+            // Ensure numeric
+            if (newRow.price) newRow.price = parseFloat(newRow.price);
+            if (newRow.distance) newRow.distance = parseFloat(newRow.distance);
+            
             return newRow;
         });
 
-
-        // Upload in batches of 100 records
+        // BATCH UPLOAD PHASE
         const batchSize = 100;
         const totalBatches = Math.ceil(dataToUpload.length / batchSize);
+        const failedRecords = [];
 
         for (let i = 0; i < totalBatches; i++) {
             const start = i * batchSize;
             const end = Math.min(start + batchSize, dataToUpload.length);
             const batch = dataToUpload.slice(start, end);
+            const rawBatch = parsedData.slice(start, end); // Keep raw for failed report
 
-            const progress = 10 + Math.floor((i / totalBatches) * 80);
+            const progress = 10 + Math.floor((i / totalBatches) * 85);
             updateProgress(progress, `Uploading batch ${i + 1} of ${totalBatches}...`);
 
-            const { error } = await supabase
-                .from('historical_orders')
-                .insert(batch);
+            // Retry logic
+            let success = false;
+            let attempts = 0;
+            const maxAttempts = 3;
 
-            if (error) throw error;
+            while (!success && attempts < maxAttempts) {
+                attempts++;
+                const { error } = await supabase.from('historical_orders').insert(batch);
+
+                if (!error) {
+                    success = true;
+                } else {
+                    console.warn(`Batch ${i+1} attempt ${attempts} failed:`, error);
+                    if (attempts === maxAttempts) {
+                        // All attempts failed, add to failure list
+                        rawBatch.forEach(r => failedRecords.push({ ...r, _error: error.message }));
+                    } else {
+                        // Wait before retry
+                        await new Promise(r => setTimeout(r, 1000 * attempts));
+                    }
+                }
+            }
         }
 
-        updateProgress(100, 'Upload complete!');
+        // COMPLETION PHASE
+        updateProgress(100, 'Process complete.');
+        
+        if (failedRecords.length > 0) {
+            // Partial Success
+            const successCount = dataToUpload.length - failedRecords.length;
+            showMessage(`Uploaded ${successCount} records. ⚠️ ${failedRecords.length} records failed.`, 'error');
+            downloadFailedRecords(failedRecords);
+        } else {
+            // Full Success
+            showMessage(`Successfully uploaded all ${dataToUpload.length} records!`, 'success');
+        }
 
-        // Show success message
+        // Cleanup
         setTimeout(() => {
-            document.getElementById('uploadProgress').style.display = 'none';
-            showMessage(`Successfully uploaded ${dataToUpload.length} records!`, 'success');
-
-            // Reset form
+            progressSection.style.display = 'none';
             document.getElementById('fileInput').value = '';
             document.getElementById('fileInfo').style.display = 'none';
             document.getElementById('previewSection').style.display = 'none';
             parsedData = [];
             selectedColumns = [];
-
-            // Reload stats
             loadStats();
-        }, 1000);
+        }, 2000);
 
     } catch (error) {
-        console.error('Upload error:', error);
-        document.getElementById('uploadProgress').style.display = 'none';
-        showMessage('Error uploading data: ' + error.message, 'error');
+        console.error('Critical Upload error:', error);
+        progressSection.style.display = 'none';
+        showMessage('Critical error halting upload: ' + error.message, 'error');
         document.getElementById('appendBtn').disabled = false;
         document.getElementById('replaceBtn').disabled = false;
     }
 }
 
-// New function to handle manual record form submission
-async function handleManualRecordSubmit(event) {
-    console.log("Made it to handle manual record");
-    event.preventDefault();
+function downloadFailedRecords(records) {
+    if (!records || records.length === 0) return;
 
-    const form = event.target;
-    const formData = new FormData(form);
+    const headers = Object.keys(records[0]);
+    const csvRows = [headers.join(',')];
 
-    // Construct record object from form data
-    const record = {};
-    formData.forEach((value, key) => {
-        record[key] = value;
+    records.forEach(row => {
+        const values = headers.map(header => {
+            const val = row[header] === null || row[header] === undefined ? '' : row[header];
+            return `"${val}"`.replace(/\n/g, ' '); // simple escape
+        });
+        csvRows.push(values.join(','));
     });
 
-    // Calculate price_per_mile if price and distance are provided
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `failed_records_${new Date().getTime()}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    alert('A CSV file containing the failed records has been downloaded. Please correct the errors and re-upload.');
+}
+
+async function handleManualRecordSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const record = {};
+    formData.forEach((value, key) => record[key] = value);
+
     if (record.lo_price && record.distance && !record.price_per_mile) {
         record.price_per_mile = (parseFloat(record.lo_price) / parseFloat(record.distance)).toFixed(2);
     }
 
     try {
-        // Insert the single record into the database
-        const { error } = await supabase
-            .from('manual_orders')
-            .insert([record]);
-
-        if (error) {
-            throw error;
-        }
-
+        const { error } = await supabase.from('manual_orders').insert([record]);
+        if (error) throw error;
         showMessage('Record added successfully!', 'success');
-
-        // Reset the form
         form.reset();
-
-        // Reload stats to reflect new data
         loadStats();
-
     } catch (error) {
         console.error('Error adding record:', error);
         showMessage('Error adding record: ' + error.message, 'error');
     }
 }
 
-
 function updateProgress(percent, text) {
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
-
-    progressFill.style.width = percent + '%';
-    progressText.textContent = text + ' ' + percent + '%';
+    if (progressFill) progressFill.style.width = percent + '%';
+    if (progressText) progressText.textContent = text + ' ' + percent + '%';
 }
 
 async function downloadAllData() {
+    // Existing download logic remains same, just ensuring function is present
     try {
         const btn = document.getElementById('downloadAllBtn');
         btn.disabled = true;
         btn.textContent = 'Downloading...';
 
-        // Fetch all records
-        const { data, error } = await supabase
-            .from('historical_orders')
-            .select('*')
-            .order('order_date', { ascending: false });
-
+        const { data, error } = await supabase.from('historical_orders').select('*').order('order_date', { ascending: false });
         if (error) throw error;
-
         if (!data || data.length === 0) {
             alert('No data to download');
             return;
         }
-
-        // Create CSV
         const headers = Object.keys(data[0]);
         const csvRows = [headers.join(',')];
-
         data.forEach(row => {
-            const values = headers.map(header => {
-                const value = row[header] !== null && row[header] !== undefined ? row[header] : '';
-                return `"${value}"`;
-            });
-            csvRows.push(values.join(','));
+            csvRows.push(headers.map(h => `"${row[h]||''}"`).join(','));
         });
-
-        // Download
-        const csvContent = csvRows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `historical-orders-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
-
     } catch (error) {
         console.error('Download error:', error);
-        alert('Error downloading data: ' + error.message);
+        alert('Error downloading: ' + error.message);
     } finally {
         const btn = document.getElementById('downloadAllBtn');
-        btn.disabled = false;
-        btn.textContent = '📥 Download All Data (CSV)';
+        if(btn) {
+           btn.disabled = false;
+           btn.textContent = '📥 Download All Data (CSV)';
+        }
     }
 }
 
@@ -530,18 +637,15 @@ function showMessage(message, type) {
     const modal = document.getElementById('messageModal');
     const title = document.getElementById('messageTitle');
     const content = document.getElementById('messageContent');
-
-    title.textContent = type === 'error' ? '❌ Error' : '✅ Success';
-    content.textContent = message;
-
-    modal.style.display = 'flex';
-
-    // Auto close after 5 seconds
-    setTimeout(() => {
-        if (modal.style.display === 'flex') {
-            hideModal('messageModal');
+    if(title) title.textContent = type === 'error' ? '❌ Error' : '✅ Success';
+    if(content) content.textContent = message;
+    if(modal) {
+        modal.style.display = 'flex';
+        // Only auto-close success messages, leave errors open
+        if (type === 'success') {
+             setTimeout(() => { if (modal.style.display === 'flex') hideModal('messageModal'); }, 3000);
         }
-    }, 5000);
+    }
 }
 
 function hideModal(modal_name) {
