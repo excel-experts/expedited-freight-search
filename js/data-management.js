@@ -261,27 +261,33 @@ function validateAndPreview() {
     parsedData.forEach((row, index) => {
         const errors = {};
 
-        // Check Price (if mapped)
-        if (row.price && isNaN(parseFloat(row.price))) {
-            errors['price'] = 'Price must be a number';
-        }
-
-        // Check Distance (if mapped)
-        if (row.distance && isNaN(parseFloat(row.distance))) {
-            errors['distance'] = 'Distance must be a number';
-        }
-
-        // Check Date (basic check)
-        if (row.order_date && isNaN(Date.parse(row.order_date))) {
-            errors['order_date'] = 'Invalid date format';
-        }
-
-        // Required fields check (simplified)
-        // In a real scenario, we'd check against componentMapping to see what IS mapped
-        // For now, let's just check raw CSV data if it looks like the right column
-        if (!row.order_id && !row.id) { // loose check
-            // errors['order_id'] = 'Missing ID'; // Optional depending on strictness
-        }
+        // Iterate through ALL selected columns to ensure no blanks
+        selectedColumns.forEach(col => {
+            const val = row[col];
+            // Check for blank (empty string, null, undefined, or just whitespace)
+            if (val === null || val === undefined || String(val).trim() === '') {
+                errors[col] = 'Cannot be blank';
+            } else {
+                // If not blank, check type based on mapping
+                const dbField = columnMapping[col];
+                if (dbField) {
+                    // Numeric fields
+                    if (['price', 'distance', 'lo_price', 'hi_price', 'inop_price'].includes(dbField)) {
+                        // Remove currency symbols or commas if present before checking
+                        const cleanVal = String(val).replace(/[$,]/g, '');
+                        if (isNaN(parseFloat(cleanVal))) {
+                            errors[col] = 'Must be a number';
+                        }
+                    }
+                    // Date fields
+                    if (dbField === 'order_date') {
+                        if (isNaN(Date.parse(val))) {
+                            errors[col] = 'Invalid date';
+                        }
+                    }
+                }
+            }
+        });
 
         if (Object.keys(errors).length > 0) {
             validationErrors.push({ rowIndex: index, errors });
@@ -308,7 +314,7 @@ function displayPreview() {
 
     if (invalidCount > 0) {
         validationSummaryDiv.className = 'validation-summary validation-invalid';
-        validationSummaryDiv.innerHTML = `<span>⚠️ Found ${invalidCount} rows with issues.</span> <span>${validCount} valid rows.</span>`;
+        validationSummaryDiv.innerHTML = `<span>⚠️ Found ${invalidCount} invalid rows (blank or bad format). These will be SKIPPED during upload.</span> <span>${validCount} valid rows.</span>`;
     } else {
         validationSummaryDiv.className = 'validation-summary validation-valid';
         validationSummaryDiv.innerHTML = `<span>✅ All ${totalRows} rows look valid.</span>`;
@@ -347,6 +353,8 @@ function displayPreview() {
             const csvCol = this.getAttribute('data-csv-col');
             const dbField = this.value;
             columnMapping[csvCol] = dbField;
+            // Re-validate when mapping changes because type checks depend on it
+            validateAndPreview();
         });
     });
 
@@ -414,11 +422,24 @@ function showUploadInfo() {
 
 function confirmUpload(mode) {
     uploadMode = mode;
-    const message = mode === 'append'
-        ? `Are you sure you want to append ${parsedData.length} records to the existing data?`
-        : `⚠️ WARNING: This will delete ALL existing records and replace them with ${parsedData.length} new records. This action cannot be undone. Are you sure?`;
 
-    document.getElementById('confirmMessage').textContent = message;
+    // Check validation status
+    const invalidCount = validationErrors.length;
+    const totalCount = parsedData.length;
+    const validCount = totalCount - invalidCount;
+
+    let message = '';
+
+    if (invalidCount > 0) {
+        message += `⚠️ WARNING: You have ${invalidCount} invalid rows preventing upload. These rows will be SKIPPED.\n\n`;
+        message += `Only the ${validCount} valid records will be processed.\n\n`;
+    }
+
+    message += mode === 'append'
+        ? `Are you sure you want to append ${validCount} valid records to the existing data?`
+        : `⚠️ WARNING: This will delete ALL existing records and replace them with ${validCount} valid records. This action cannot be undone. Are you sure?`;
+
+    document.getElementById('confirmMessage').innerText = message; // Use innerText to handle newlines
     document.getElementById('confirmModal').style.display = 'flex';
 }
 
@@ -450,7 +471,12 @@ async function executeUpload() {
         updateProgress(10, 'Preparing data...');
 
         // Map data to DB structure
-        const dataToUpload = parsedData.map(row => {
+        // Filter out invalid rows first
+        const validRows = parsedData.filter((row, index) =>
+            !validationErrors.some(e => e.rowIndex === index)
+        );
+
+        const dataToUpload = validRows.map(row => {
             let newRow = {};
             for (let csvCol in columnMapping) {
                 const dbField = columnMapping[csvCol];
@@ -462,9 +488,9 @@ async function executeUpload() {
             if (!newRow.price_per_mile && newRow.price && newRow.distance) {
                 newRow.price_per_mile = (parseFloat(newRow.price) / parseFloat(newRow.distance)).toFixed(2);
             }
-            // Ensure numeric
-            if (newRow.price) newRow.price = parseFloat(newRow.price);
-            if (newRow.distance) newRow.distance = parseFloat(newRow.distance);
+            // Ensure numeric and sanitation
+            if (newRow.price) newRow.price = parseFloat(String(newRow.price).replace(/[$,]/g, ''));
+            if (newRow.distance) newRow.distance = parseFloat(String(newRow.distance).replace(/,/g, ''));
 
             return newRow;
         });
