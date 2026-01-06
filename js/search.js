@@ -205,7 +205,7 @@ function displayResults() {
     let inopPriceSum = 0;
 
     allResults.forEach(order => {
-        const price = parseFloat(order.price) || 0;
+        const price = parseFloat(order.avg_price) || 0;
         const vehicleCnt = parseInt(order.vehicle_cnt, 10) || 0;
         const inopVal = order.inop_info ? order.inop_info.toLocaleString() : '';
         if (inopVal.includes('Y')) {
