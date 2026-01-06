@@ -83,7 +83,7 @@ async function handleSearch(e) {
                                                                                 order_id,carrier,
                                                                                 pickup_business,pickup_city,pickup_state,pickup_zip,
                                                                                 delivery_business,delivery_city,delivery_state,delivery_zip,
-                                                                                inop_info,order_date,vehicle_cnt,price,distance
+                                                                                inop_info,order_date,vehicle_cnt,price,avg_price,distance
                                                                                 `);
         let query_manual = supabase.from('manual_orders').select(`
                                                                     pickup_business,pickup_city,
