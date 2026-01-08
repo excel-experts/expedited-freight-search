@@ -137,6 +137,7 @@ function handleFileSelect(e) {
 // Store selected columns & mapping
 let selectedColumns = [];
 let columnMapping = {};
+let currentViewMode = 'all';
 
 function parseCSV(csvText) {
     try {
@@ -157,6 +158,12 @@ function parseCSV(csvText) {
         }
 
         parsedData = results.data;
+        // Clean previous metadata
+        parsedData.forEach(row => {
+            delete row._validationErrors;
+            delete row._originalIndex;
+        });
+
         const allHeaders = Object.keys(parsedData[0]);
 
         // Default columns we expect
@@ -236,6 +243,8 @@ function parseJSON(jsonText) {
             if (!row.price_per_mile && row.price && row.distance) {
                 row.price_per_mile = (parseFloat(row.price) / parseFloat(row.distance)).toFixed(2);
             }
+            delete row._validationErrors;
+            delete row._originalIndex;
             return row;
         });
 
@@ -300,6 +309,7 @@ function validateAndPreview() {
 
     parsedData.forEach((row, index) => {
         const errors = {};
+        row._originalIndex = index; // Keep track of original index
 
         // Iterate through ALL selected columns to ensure no blanks
         selectedColumns.forEach(col => {
@@ -330,7 +340,10 @@ function validateAndPreview() {
         });
 
         if (Object.keys(errors).length > 0) {
+            row._validationErrors = errors;
             validationErrors.push({ rowIndex: index, errors });
+        } else {
+            delete row._validationErrors;
         }
     });
 
@@ -346,6 +359,14 @@ function displayPreview() {
     const previewTableHead = document.getElementById('previewTableHead');
     const previewTableBody = document.getElementById('previewTableBody');
     const validationSummaryDiv = document.getElementById('validationSummary') || createValidationSummary(previewSection);
+
+    // Filter data based on current view mode
+    let rowsToDisplay = parsedData;
+    if (currentViewMode === 'invalid') {
+        rowsToDisplay = parsedData.filter(row => row._validationErrors);
+    } else if (currentViewMode === 'valid') {
+        rowsToDisplay = parsedData.filter(row => !row._validationErrors);
+    }
 
     // Validation Summary
     const totalRows = parsedData.length;
@@ -367,30 +388,39 @@ function displayPreview() {
             .join('');
 
         validationSummaryDiv.className = 'validation-summary validation-invalid';
+
+        // Button Styles
+        const btnStyleBase = 'padding: 5px 10px; margin-right: 5px; cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 4px;';
+        const btnStyleActive = 'padding: 5px 10px; margin-right: 5px; cursor: pointer; border: 1px solid #0056b3; background: #007bff; color: white; border-radius: 4px;';
+
+        const allActive = currentViewMode === 'all' ? btnStyleActive : btnStyleBase;
+        const invalidActive = currentViewMode === 'invalid' ? btnStyleActive : btnStyleBase;
+        const validActive = currentViewMode === 'valid' ? btnStyleActive : btnStyleBase;
+
         validationSummaryDiv.innerHTML = `
             <div>
                 <strong>⚠️ Found ${invalidCount} invalid rows (blank or bad format). These will be SKIPPED during upload.</strong>
                 <ul style="margin: 5px 0 10px 20px; text-align: left;">
                     ${breakdownHtml}
                 </ul>
-                <button id="downloadErrorsBtn" class="btn btn-secondary" style="margin-top: 5px;">
-                    📥 Download Validation Report (Invalid Rows Only)
-                </button>
-            </div>
-            <div style="margin-top: 10px;">
-                <span>${validCount} valid rows ready for upload.</span>
+                <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                    <span style="margin-right: 10px; font-weight: bold;">View:</span>
+                    <button id="viewAllBtn" style="${allActive}">Show All (${totalRows})</button>
+                    <button id="viewInvalidBtn" style="${invalidActive}">Show Invalid Only (${invalidCount})</button>
+                    <button id="viewValidBtn" style="${validActive}">Show Valid Only (${validCount})</button>
+                </div>
             </div>
         `;
 
-        // Add listener for download button
-        const downloadBtn = document.getElementById('downloadErrorsBtn');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', downloadValidationReport);
-        }
+        // Add listeners for view toggles
+        document.getElementById('viewAllBtn').addEventListener('click', () => { currentViewMode = 'all'; currentPage = 1; displayPreview(); });
+        document.getElementById('viewInvalidBtn').addEventListener('click', () => { currentViewMode = 'invalid'; currentPage = 1; displayPreview(); });
+        document.getElementById('viewValidBtn').addEventListener('click', () => { currentViewMode = 'valid'; currentPage = 1; displayPreview(); });
 
     } else {
         validationSummaryDiv.className = 'validation-summary validation-valid';
         validationSummaryDiv.innerHTML = `<span>✅ All ${totalRows} rows look valid.</span>`;
+        if (currentViewMode === 'invalid') currentViewMode = 'all';
     }
 
 
@@ -433,20 +463,21 @@ function displayPreview() {
 
     // Pagination Logic
     const startIdx = (currentPage - 1) * PAGE_SIZE;
-    const endIdx = Math.min(startIdx + PAGE_SIZE, parsedData.length);
-    const visibleRows = parsedData.slice(startIdx, endIdx);
+    const endIdx = Math.min(startIdx + PAGE_SIZE, rowsToDisplay.length);
+    const visibleRows = rowsToDisplay.slice(startIdx, endIdx);
 
     previewTableBody.innerHTML = '';
 
-    visibleRows.forEach((row, loopIndex) => {
-        const actualIndex = startIdx + loopIndex;
-        const rowErrors = validationErrors.find(e => e.rowIndex === actualIndex)?.errors;
-
+    visibleRows.forEach((row) => {
         const tr = document.createElement('tr');
+        // highlight row if it has any error
+        if (row._validationErrors) {
+            tr.style.backgroundColor = '#fff0f0';
+        }
 
         tr.innerHTML = columnsToShow.map(col => {
             const value = row[col] !== undefined && row[col] !== null ? row[col] : '';
-            const errorMsg = rowErrors && rowErrors[col] ? rowErrors[col] : null;
+            const errorMsg = row._validationErrors && row._validationErrors[col] ? row._validationErrors[col] : null;
             const classAttr = errorMsg ? 'class="invalid-cell" title="' + errorMsg + '"' : '';
 
             return `<td ${classAttr}>${value}</td>`;
@@ -456,7 +487,7 @@ function displayPreview() {
     });
 
     // Update Pagination Controls
-    updatePaginationControls(startIdx, endIdx, totalRows);
+    updatePaginationControls(startIdx, endIdx, rowsToDisplay.length);
 
     previewSection.style.display = 'block';
 
@@ -474,56 +505,12 @@ function createValidationSummary(parent) {
     return div;
 }
 
-function downloadValidationReport() {
-    if (validationErrors.length === 0) return;
-
-    // Get all invalid rows
-    const invalidRowsData = validationErrors.map(errItem => {
-        const row = parsedData[errItem.rowIndex];
-        // Create a friendly error string
-        const errorDesc = Object.entries(errItem.errors)
-            .map(([col, msg]) => `[${col}]: ${msg}`)
-            .join('; ');
-
-        return {
-            ...row,
-            VALIDATION_ERRORS: errorDesc
-        };
-    });
-
-    // Generate CSV
-    if (invalidRowsData.length === 0) return;
-
-    // Get headers (original headers + VALIDATION_ERRORS)
-    const headers = Object.keys(invalidRowsData[0]);
-    const csvRows = [headers.join(',')];
-
-    invalidRowsData.forEach(row => {
-        const values = headers.map(header => {
-            let val = row[header] === null || row[header] === undefined ? '' : row[header];
-            // Escape quotes
-            val = String(val).replace(/"/g, '""');
-            return `"${val}"`;
-        });
-        csvRows.push(values.join(','));
-    });
-
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `validation_errors_${new Date().getTime()}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
-
 function updatePaginationControls(start, end, total) {
     const info = document.getElementById('pageInfo');
     const prevBtn = document.getElementById('prevPageBtn');
     const nextBtn = document.getElementById('nextPageBtn'); // Assuming these exist now
 
-    if (info) info.textContent = `Showing rows ${start + 1}-${end} of ${total}`;
+    if (info) info.textContent = `Showing rows ${start + 1}-${end} of ${total} (${currentViewMode} view)`;
     if (prevBtn) prevBtn.disabled = currentPage === 1;
     if (nextBtn) nextBtn.disabled = end >= total;
 }
