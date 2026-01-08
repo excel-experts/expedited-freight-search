@@ -162,8 +162,8 @@ function parseCSV(csvText) {
 
         // Default columns we expect
         const defaultColumns = [
-            'order_id', 'pickup_business', 'delivery_business', 'pickup_city',
-            'delivery_city', 'carrier', 'price', 'distance', 'order_date'
+            'order_id', 'order_date', 'pickup_business', 'delivery_business', 'pickup_city',
+            'delivery_city', 'carrier', 'carrier_price', 'tarriff_price', 'distance'
         ];
 
         // Auto-select corresponding columns
@@ -329,7 +329,7 @@ function displayPreview() {
         'order_id', 'order_date', 'carrier', 'inop_info', 'price', 'distance',
         'pickup_business', 'pickup_city', 'pickup_state', 'pickup_zip',
         'delivery_business', 'delivery_city', 'delivery_state', 'delivery_zip',
-        'price_per_mile'
+        'price_per_mile', 'tarriff_price', 'carrier_price'
     ];
 
     // Display headers

@@ -14,6 +14,8 @@ const columnMapping = {
     'inop_info': 'INOP',
     'vehicle_cnt': '# Autos',
     'price': 'Price',
+    'carrier_price': 'Carrier Price',
+    'tarriff_price': 'Tarriff',
     'distance': 'Distance (mi)',
     'price_per_mile': 'Price/Mile',
     'order_date': 'Order Date'
