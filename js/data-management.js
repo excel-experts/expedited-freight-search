@@ -372,6 +372,7 @@ function displayPreview() {
     const totalRows = parsedData.length;
     const invalidCount = validationErrors.length;
     const validCount = totalRows - invalidCount;
+    document.getElementById('totalRows').textContent = validCount;
 
     if (invalidCount > 0) {
         // Create error breakdown
