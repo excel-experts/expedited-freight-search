@@ -82,7 +82,7 @@ async function handleSearch(e) {
     try {
         // Build query
         let query_historical = supabase.from('historical_order_rollup').select(`
-                                                                                order_id,carrier,
+                                                                                order_id,carrier,avg_tarriff_price,avg_carrier_price,
                                                                                 pickup_business,pickup_city,pickup_state,pickup_zip,
                                                                                 delivery_business,delivery_city,delivery_state,delivery_zip,
                                                                                 inop_info,order_date,vehicle_cnt,price,avg_price,distance
@@ -91,7 +91,7 @@ async function handleSearch(e) {
                                                                     pickup_business,pickup_city,
                                                                     delivery_business,delivery_city,
                                                                     distance,lo_price,hi_price,inop_price,
-                                                                    valid_date                                                                                
+                                                                    valid_date,notes                                                                                
                                                                 `);
 
         if (pickupBusiness) {
@@ -203,40 +203,97 @@ function displayResults() {
     let loPriceCount = 0;
     let hiPriceSum = 0;
     let hiPriceCount = 0;
-    let inopPriceCount = 0;
     let inopPriceSum = 0;
+    let inopPriceCount = 0;
+
+    // Tariff
+    let loTarriffSum = 0;
+    let loTarriffCount = 0;
+    let hiTarriffSum = 0;
+    let hiTarriffCount = 0;
+    let inopTarriffSum = 0;
+    let inopTarriffCount = 0;
+
+    // Carrier
+    let loCarrierSum = 0;
+    let loCarrierCount = 0;
+    let hiCarrierSum = 0;
+    let hiCarrierCount = 0;
+    let inopCarrierSum = 0;
+    let inopCarrierCount = 0;
 
     allResults.forEach(order => {
         const price = parseFloat(order.avg_price) || 0;
+        const tarriff = parseFloat(order.avg_tarriff_price) || 0;
+        const carrierVal = parseFloat(order.avg_carrier_price) || 0;
+
         const vehicleCnt = parseInt(order.vehicle_cnt, 10) || 0;
         const inopVal = order.inop_info ? order.inop_info.toLocaleString() : '';
+
         if (inopVal.includes('Y')) {
             inopPriceSum += price;
             inopPriceCount += 1;
+
+            inopTarriffSum += tarriff;
+            inopTarriffCount += 1;
+
+            inopCarrierSum += carrierVal;
+            inopCarrierCount += 1;
         }
 
         if (vehicleCnt <= 3) {
             loPriceSum += price;
             loPriceCount += 1;
+
+            loTarriffSum += tarriff;
+            loTarriffCount += 1;
+
+            loCarrierSum += carrierVal;
+            loCarrierCount += 1;
         } else if (vehicleCnt >= 4) {
             hiPriceSum += price;
             hiPriceCount += 1;
+
+            hiTarriffSum += tarriff;
+            hiTarriffCount += 1;
+
+            hiCarrierSum += carrierVal;
+            hiCarrierCount += 1;
         }
     });
 
-    const totalPrice = loPriceSum + hiPriceSum;
-    const avgPrice = totalRecords > 0 ? totalPrice / totalRecords : 0;
+    // Averages - Customer Price
     const avgLoPrice = loPriceCount > 0 ? loPriceSum / loPriceCount : 0;
     const avgHiPrice = hiPriceCount > 0 ? hiPriceSum / hiPriceCount : 0;
-
-    // If you use avgInopPrice, update its logic accordingly or remove if not needed
     const avgInopPrice = inopPriceCount > 0 ? inopPriceSum / inopPriceCount : 0;
+
+    // Averages - Tarriff
+    const avgTarriffLoPrice = loTarriffCount > 0 ? loTarriffSum / loTarriffCount : 0;
+    const avgTarriffHiPrice = hiTarriffCount > 0 ? hiTarriffSum / hiTarriffCount : 0;
+    const avgTarriffInopPrice = inopTarriffCount > 0 ? inopTarriffSum / inopTarriffCount : 0;
+
+    // Averages - Carrier
+    const avgCarrierLoPrice = loCarrierCount > 0 ? loCarrierSum / loCarrierCount : 0;
+    const avgCarrierHiPrice = hiCarrierCount > 0 ? hiCarrierSum / hiCarrierCount : 0;
+    const avgCarrierInopPrice = inopCarrierCount > 0 ? inopCarrierSum / inopCarrierCount : 0;
 
     // Update metrics
     document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
+
+    // Customer Price
     document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2) + ' / ' + loPriceCount.toLocaleString();
     document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2) + ' / ' + hiPriceCount.toLocaleString();
     document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2) + ' / ' + inopPriceCount.toLocaleString();
+
+    // Tarriff
+    document.getElementById('avgTarriffLoPrice').textContent = '$' + avgTarriffLoPrice.toFixed(2) + ' / ' + loTarriffCount.toLocaleString();
+    document.getElementById('avgTarriffHiPrice').textContent = '$' + avgTarriffHiPrice.toFixed(2) + ' / ' + hiTarriffCount.toLocaleString();
+    document.getElementById('avgTarriffInopPrice').textContent = '$' + avgTarriffInopPrice.toFixed(2) + ' / ' + inopTarriffCount.toLocaleString();
+
+    // Carrier
+    document.getElementById('avgCarrierLoPrice').textContent = '$' + avgCarrierLoPrice.toFixed(2) + ' / ' + loCarrierCount.toLocaleString();
+    document.getElementById('avgCarrierHiPrice').textContent = '$' + avgCarrierHiPrice.toFixed(2) + ' / ' + hiCarrierCount.toLocaleString();
+    document.getElementById('avgCarrierInopPrice').textContent = '$' + avgCarrierInopPrice.toFixed(2) + ' / ' + inopCarrierCount.toLocaleString();
 
     // Display table
     displayTablePage();
