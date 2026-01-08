@@ -15,10 +15,17 @@ const columnMapping = {
     'vehicle_cnt': '# Autos',
     'price': 'Price',
     'carrier_price': 'Carrier Price',
-    'tarriff_price': 'Tarriff',
+    'tarriff_price': 'Tarriff Pmt',
     'distance': 'Distance (mi)',
     'price_per_mile': 'Price/Mile',
-    'order_date': 'Order Date'
+    'order_date': 'Order Date',
+    'notes': 'Notes',
+    'lo_price': '<3 Price',
+    'hi_price': '4+ Price',
+    'inop_price': 'INOP Price',
+    'valid_date': 'Price Good Until',
+    'avg_carrier_price': 'Average Carrier Price',
+    'avg_tarriff_price': 'Average Tarriff Pmt'
 };
 
 let supabase;
@@ -315,7 +322,7 @@ function displayTablePage() {
     const thead = document.getElementById('resultsTableHead');
 
     // Determine columns from the first result
-    const columnsToShow = Object.keys(allResults[0]);
+    const columnsToShow = Object.keys(allResults[0]).filter(col => columnMapping.hasOwnProperty(col));
 
     // Generate Headers
     thead.innerHTML = '<tr>' +
@@ -422,7 +429,7 @@ function displayManualResults() {
     const previewTableBody = document.getElementById('previewTableBody');
 
     // Use pre-selected columns or all columns if none selected
-    const columnsToShow = Object.keys(manResults[0]);
+    const columnsToShow = Object.keys(manResults[0]).filter(col => columnMapping.hasOwnProperty(col));
 
     // Display headers
     previewTableHead.innerHTML = '<tr>' +
