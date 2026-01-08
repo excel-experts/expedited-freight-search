@@ -175,16 +175,20 @@ function parseCSV(csvText) {
         // precise map of common CSV headers to DB fields
         const aliases = {
             'Order ID': 'order_id',
-            'Order Date': 'order_date',
-            'INOP INFO': 'inop_info',
-            'Carrier': 'carrier',
-            'Total Price': 'price',
-            'Distance': 'distance',
+            'Created Date': 'order_date',
+            'INOP Info': 'inop_info',
+            'Carrier Price Per Vehicle': 'carrier_price',
+            'Carrier Name': 'carrier',
+            'Customer Payment Total Tariff': 'tarriff_price',
+            'Pickup Business Name': 'pickup_business',
             'Pickup City': 'pickup_city',
-            'Delivery City': 'delivery_city',
             'Pickup State': 'pickup_state',
+            'Pickup ZIP': 'pickup_zip',
+            'Delivery Business Name': 'delivery_business',
+            'Delivery City': 'delivery_city',
             'Delivery State': 'delivery_state',
-            'Price': 'price'
+            'Delivery ZIP': 'delivery_zip',
+            'Distance': 'distance'
         };
 
         allHeaders.forEach(csvHeader => {
