@@ -89,21 +89,25 @@
             <div class="admin-card">
                 <h3>✍️ Add Record Manually</h3>
                 <form id="manualEntryForm" novalidate>
-                    <div class="form-group">
-                        <label for="pickup_business">Pickup Business</label>
-                        <input type="text" id="pickup_business" name="pickup_business" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pickup_business">Pickup Business</label>
+                            <input type="text" id="pickup_business" name="pickup_business" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pickup_city">Pickup City</label>
+                            <input type="text" id="pickup_city" name="pickup_city" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="pickup_city">Pickup City</label>
-                        <input type="text" id="pickup_city" name="pickup_city" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="delivery_business">Delivery Business</label>
-                        <input type="text" id="delivery_business" name="delivery_business" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="delivery_city">Delivery City</label>
-                        <input type="text" id="delivery_city" name="delivery_city" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="delivery_business">Delivery Business</label>
+                            <input type="text" id="delivery_business" name="delivery_business" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="delivery_city">Delivery City</label>
+                            <input type="text" id="delivery_city" name="delivery_city" required>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -128,6 +132,10 @@
                     <div class="form-group">
                         <label for="valid_date">Valid Until Date</label>
                         <input type="date" id="valid_date" name="valid_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" rows="4"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary" id="manualSubmitBtn">Add Record</button>
                 </form>
