@@ -163,17 +163,54 @@ function parseCSV(csvText) {
         // Default columns we expect
         const defaultColumns = [
             'order_id', 'order_date', 'pickup_business', 'delivery_business', 'pickup_city',
-            'delivery_city', 'carrier', 'carrier_price', 'tarriff_price', 'distance'
+            'delivery_city', 'carrier', 'carrier_price', 'tarriff_price', 'distance', 'inop_info'
         ];
 
-        // Auto-select corresponding columns
+        // Auto-select corresponding columns (exact matches)
         selectedColumns = allHeaders.filter(h => defaultColumns.includes(h));
 
-        // Auto-map columns if they match exact names
+        // IMPROVED: Smart Auto-mapping
         columnMapping = {};
-        defaultColumns.forEach(dbCol => {
-            if (allHeaders.includes(dbCol)) {
-                columnMapping[dbCol] = dbCol;
+
+        // precise map of common CSV headers to DB fields
+        const aliases = {
+            'Order ID': 'order_id',
+            'Order Date': 'order_date',
+            'INOP INFO': 'inop_info',
+            'Carrier': 'carrier',
+            'Total Price': 'price',
+            'Distance': 'distance',
+            'Pickup City': 'pickup_city',
+            'Delivery City': 'delivery_city',
+            'Pickup State': 'pickup_state',
+            'Delivery State': 'delivery_state',
+            'Price': 'price'
+        };
+
+        allHeaders.forEach(csvHeader => {
+            // 1. Check exact match
+            if (defaultColumns.includes(csvHeader)) {
+                columnMapping[csvHeader] = csvHeader;
+                return;
+            }
+
+            // 2. Check alias map
+            if (aliases[csvHeader]) {
+                const mappedCol = aliases[csvHeader];
+                columnMapping[csvHeader] = mappedCol;
+                if (!selectedColumns.includes(csvHeader)) selectedColumns.push(csvHeader);
+                return;
+            }
+
+            // 3. Fuzzy match (lowercase and remove spaces/underscores)
+            const normalizedCsv = csvHeader.toLowerCase().replace(/[\s_]/g, '');
+            const foundDbCol = defaultColumns.find(dbCol =>
+                dbCol.replace(/_/g, '') === normalizedCsv
+            );
+
+            if (foundDbCol) {
+                columnMapping[csvHeader] = foundDbCol;
+                if (!selectedColumns.includes(csvHeader)) selectedColumns.push(csvHeader);
             }
         });
 
