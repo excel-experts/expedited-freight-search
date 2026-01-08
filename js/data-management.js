@@ -354,8 +354,41 @@ function displayPreview() {
     const validCount = totalRows - invalidCount;
 
     if (invalidCount > 0) {
+        // Create error breakdown
+        const errorCounts = {};
+        validationErrors.forEach(item => {
+            Object.entries(item.errors).forEach(([col, msg]) => {
+                const key = `${col}: ${msg}`;
+                errorCounts[key] = (errorCounts[key] || 0) + 1;
+            });
+        });
+
+        const breakdownHtml = Object.entries(errorCounts)
+            .map(([k, v]) => `<li>${k} (${v} rows)</li>`)
+            .join('');
+
         validationSummaryDiv.className = 'validation-summary validation-invalid';
-        validationSummaryDiv.innerHTML = `<span>⚠️ Found ${invalidCount} invalid rows (blank or bad format). These will be SKIPPED during upload.</span> <span>${validCount} valid rows.</span>`;
+        validationSummaryDiv.innerHTML = `
+            <div>
+                <strong>⚠️ Found ${invalidCount} invalid rows (blank or bad format). These will be SKIPPED during upload.</strong>
+                <ul style="margin: 5px 0 10px 20px; text-align: left;">
+                    ${breakdownHtml}
+                </ul>
+                <button id="downloadErrorsBtn" class="btn btn-secondary" style="margin-top: 5px;">
+                    📥 Download Validation Report (Invalid Rows Only)
+                </button>
+            </div>
+            <div style="margin-top: 10px;">
+                <span>${validCount} valid rows ready for upload.</span>
+            </div>
+        `;
+
+        // Add listener for download button
+        const downloadBtn = document.getElementById('downloadErrorsBtn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', downloadValidationReport);
+        }
+
     } else {
         validationSummaryDiv.className = 'validation-summary validation-valid';
         validationSummaryDiv.innerHTML = `<span>✅ All ${totalRows} rows look valid.</span>`;
@@ -440,6 +473,50 @@ function createValidationSummary(parent) {
     const tableContainer = parent.querySelector('.table-container');
     parent.insertBefore(div, tableContainer);
     return div;
+}
+
+function downloadValidationReport() {
+    if (validationErrors.length === 0) return;
+
+    // Get all invalid rows
+    const invalidRowsData = validationErrors.map(errItem => {
+        const row = parsedData[errItem.rowIndex];
+        // Create a friendly error string
+        const errorDesc = Object.entries(errItem.errors)
+            .map(([col, msg]) => `[${col}]: ${msg}`)
+            .join('; ');
+
+        return {
+            ...row,
+            VALIDATION_ERRORS: errorDesc
+        };
+    });
+
+    // Generate CSV
+    if (invalidRowsData.length === 0) return;
+
+    // Get headers (original headers + VALIDATION_ERRORS)
+    const headers = Object.keys(invalidRowsData[0]);
+    const csvRows = [headers.join(',')];
+
+    invalidRowsData.forEach(row => {
+        const values = headers.map(header => {
+            let val = row[header] === null || row[header] === undefined ? '' : row[header];
+            // Escape quotes
+            val = String(val).replace(/"/g, '""');
+            return `"${val}"`;
+        });
+        csvRows.push(values.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `validation_errors_${new Date().getTime()}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
 }
 
 function updatePaginationControls(start, end, total) {
