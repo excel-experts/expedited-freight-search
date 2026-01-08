@@ -2,7 +2,7 @@
 // Supabase Configuration
 // ====================================
 
-export const APP_VERSION = 'v0.1.10';
+export const APP_VERSION = 'v0.1.11';
 
 // IMPORTANT: Replace these with your actual Supabase project credentials
 // You can find these in your Supabase project settings under API

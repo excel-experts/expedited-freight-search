@@ -10,7 +10,7 @@ let uploadMode = '';
 
 // Pagination & Validation State
 let currentPage = 1;
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 100;
 let validationErrors = []; // Array of error objects { rowIndex, errors: { col: msg } }
 
 // Initialize
@@ -88,13 +88,12 @@ async function loadStats() {
             throw blankCountsError;
         } else if (blankCounts && blankCounts.length > 0) {
             document.getElementById('totalRecordsCount').textContent = blankCounts[0].total_order_count.toLocaleString();
-            document.getElementById('blankCarrierCount').textContent = blankCounts[0].blank_carrier_count.toLocaleString();
-            document.getElementById('blankOrderIdCount').textContent = blankCounts[0].blank_order_id_count.toLocaleString();
-            document.getElementById('blankPriceCount').textContent = blankCounts[0].blank_price_count.toLocaleString();
 
+            const minOrderDate = blankCounts[0].min_order_date ? new Date(blankCounts[0].min_order_date).toLocaleDateString() : 'N/A';
             const maxOrderDate = blankCounts[0].max_order_date ? new Date(blankCounts[0].max_order_date).toLocaleDateString() : 'N/A';
             const maxUpdatedAt = blankCounts[0].max_updated_at ? new Date(blankCounts[0].max_updated_at).toLocaleString() : 'N/A';
 
+            document.getElementById('oldestOrder').textContent = minOrderDate;
             document.getElementById('newestOrder').textContent = maxOrderDate;
             document.getElementById('lastUpdated').textContent = maxUpdatedAt;
         }
