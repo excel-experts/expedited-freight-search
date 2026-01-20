@@ -23,8 +23,8 @@ const columnMapping = {
     'hi_price': '4+ Price',
     'inop_price': 'INOP Price',
     'valid_date': 'Price Good Until',
-    'avg_carrier_price': 'Average Carrier Price',
-    'avg_tarriff_price': 'Average Tarriff Pmt'
+    'avg_carrier_price': 'Carrier Price',
+    'avg_tarriff_price': 'Tarriff Pmt'
 };
 
 let supabase;
