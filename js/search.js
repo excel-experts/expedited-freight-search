@@ -29,7 +29,9 @@ const columnMapping = {
 
 let supabase;
 let allResults = []; // historical results 
+let filteredResults = []; // filtered results for display
 let manResults = []; // manual entry results
+let activeFilter = 'all'; // current active filter
 let currentPage = 1;
 const recordsPerPage = 50;
 let currentSort = { column: 'order_date', direction: 'desc' };
@@ -139,6 +141,8 @@ async function handleSearch(e) {
         if (err_hist) throw err_hist;
 
         allResults = data_hist || [];
+        filteredResults = [...allResults];
+        activeFilter = 'all';
         currentPage = 1;
 
         if (allResults.length === 0) {
@@ -307,20 +311,71 @@ function displayResults() {
     // Show results section
     document.getElementById('loadingResults').style.display = 'none';
     document.getElementById('resultsSection').style.display = 'block';
+
+    // Attach click listeners to metric cards
+    document.querySelectorAll('.metric-card.clickable-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const filterType = card.dataset.filter;
+            applyFilter(filterType);
+        });
+    });
+
+    // Apply specific initial filter? No, default is all.
+    applyFilter('all');
+}
+
+function applyFilter(filterType) {
+    activeFilter = filterType;
+    currentPage = 1;
+
+    // Update active state visuals
+    document.querySelectorAll('.metric-card.clickable-card').forEach(card => {
+        if (card.dataset.filter === filterType) {
+            card.classList.add('active-filter');
+        } else {
+            card.classList.remove('active-filter');
+        }
+    });
+
+    // Filter results
+    if (filterType === 'all') {
+        filteredResults = [...allResults];
+    } else if (filterType === 'lo') {
+        // vehicle_cnt <= 3
+        filteredResults = allResults.filter(r => {
+            const vehicleCnt = parseInt(r.vehicle_cnt, 10) || 0;
+            return vehicleCnt <= 3 && !(r.inop_info && r.inop_info.includes('Y'));
+        });
+    } else if (filterType === 'hi') {
+        // vehicle_cnt >= 4
+        filteredResults = allResults.filter(r => {
+            const vehicleCnt = parseInt(r.vehicle_cnt, 10) || 0;
+            return vehicleCnt >= 4 && !(r.inop_info && r.inop_info.includes('Y'));
+        });
+    } else if (filterType === 'inop') {
+        // inop_info includes 'Y'
+        filteredResults = allResults.filter(r => r.inop_info && r.inop_info.includes('Y'));
+    }
+
+    displayTablePage();
 }
 
 
 function displayTablePage() {
-    if (allResults.length === 0) return;
+    if (filteredResults.length === 0 && allResults.length > 0) {
+        // Allow showing empty table if filter has no matches
+    } else if (allResults.length === 0) {
+        return;
+    }
 
     const startIndex = (currentPage - 1) * recordsPerPage;
     const endIndex = startIndex + recordsPerPage;
-    const pageResults = allResults.slice(startIndex, endIndex);
+    const pageResults = filteredResults.slice(startIndex, endIndex);
 
     const tbody = document.getElementById('resultsBody');
     const thead = document.getElementById('resultsTableHead');
 
-    // Determine columns from the first result
+    // Determine columns from the first result (use allResults[0] to ensure headers exist even if filter empty)
     const columnsToShow = Object.keys(allResults[0]).filter(col => columnMapping.hasOwnProperty(col));
 
     // Generate Headers
@@ -346,8 +401,8 @@ function displayTablePage() {
     });
 
     // Update pagination
-    const totalPages = Math.ceil(allResults.length / recordsPerPage);
-    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+    const totalPages = Math.ceil(filteredResults.length / recordsPerPage) || 1;
+    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${filteredResults.length.toLocaleString()} records)`;
     document.getElementById('prevBtn').disabled = currentPage === 1;
     document.getElementById('nextBtn').disabled = currentPage === totalPages;
 }
@@ -364,8 +419,8 @@ function setupTableSorting() {
                 currentSort.direction = 'asc';
             }
 
-            // Sort allResults
-            allResults.sort((a, b) => {
+            // Sort filteredResults
+            filteredResults.sort((a, b) => {
                 let valA = a[column];
                 let valB = b[column];
 
@@ -473,11 +528,12 @@ function handleClear() {
     document.getElementById('noResults').style.display = 'none';
     document.getElementById('previewSection').style.display = 'none';
     allResults = [];
+    filteredResults = [];
     manResults = [];
 }
 
 function changePage(delta) {
-    const totalPages = Math.ceil(allResults.length / recordsPerPage);
+    const totalPages = Math.ceil(filteredResults.length / recordsPerPage);
     const newPage = currentPage + delta;
     if (newPage >= 1 && newPage <= totalPages) {
         currentPage = newPage;

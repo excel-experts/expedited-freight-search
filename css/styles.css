@@ -338,6 +338,22 @@ body {
     color: var(--primary-color);
 }
 
+.metric-card.clickable-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
+    border: 2px solid transparent;
+}
+
+.metric-card.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.metric-card.active-filter {
+    border-color: var(--primary-color);
+    background-color: #eff6ff;
+}
+
 /* ====================================
    Tables
    ==================================== */
