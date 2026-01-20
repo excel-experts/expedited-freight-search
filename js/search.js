@@ -287,10 +287,10 @@ function displayResults() {
     // Update metrics
     document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
 
-    // Customer Price
-    //document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2) + ' / ' + loPriceCount.toLocaleString();
-    //document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2) + ' / ' + hiPriceCount.toLocaleString();
-    //document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2) + ' / ' + inopPriceCount.toLocaleString();
+    // AVG Price Per Mile
+    document.getElementById('avgLoPrice').textContent = '$' + avgLoPrice.toFixed(2) + ' / ' + loPriceCount.toLocaleString();
+    document.getElementById('avgHiPrice').textContent = '$' + avgHiPrice.toFixed(2) + ' / ' + hiPriceCount.toLocaleString();
+    document.getElementById('avgInopPrice').textContent = '$' + avgInopPrice.toFixed(2) + ' / ' + inopPriceCount.toLocaleString();
 
     // Tarriff
     document.getElementById('avgTarriffLoPrice').textContent = '$' + avgTarriffLoPrice.toFixed(2) + ' / ' + loTarriffCount.toLocaleString();
