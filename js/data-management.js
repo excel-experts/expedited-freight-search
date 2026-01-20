@@ -240,8 +240,8 @@ function parseJSON(jsonText) {
 
         // Calculate price_per_mile if not provided
         parsedData = parsedData.map(row => {
-            if (!row.price_per_mile && row.price && row.distance) {
-                row.price_per_mile = (parseFloat(row.price) / parseFloat(row.distance)).toFixed(2);
+            if (!row.price_per_mile && row.tarriff_price && row.distance) {
+                row.price_per_mile = (parseFloat(row.tarriff_price) / parseFloat(row.distance)).toFixed(2);
             }
             delete row._validationErrors;
             delete row._originalIndex;
@@ -322,7 +322,7 @@ function validateAndPreview() {
                 const dbField = columnMapping[col];
                 if (dbField) {
                     // Numeric fields
-                    if (['price', 'distance', 'lo_price', 'hi_price', 'inop_price'].includes(dbField)) {
+                    if (['tarriff_price', 'carrier_price', 'price_per_mile', 'distance', 'lo_price', 'hi_price', 'inop_price'].includes(dbField)) {
                         // Remove currency symbols or commas if present before checking
                         const cleanVal = String(val).replace(/[$,]/g, '');
                         if (isNaN(parseFloat(cleanVal))) {
@@ -430,7 +430,7 @@ function displayPreview() {
 
     // Define DB fields for mapping options
     const dbFields = [
-        'order_id', 'order_date', 'carrier', 'inop_info', 'price', 'distance',
+        'order_id', 'order_date', 'carrier', 'inop_info', 'distance',
         'pickup_business', 'pickup_city', 'pickup_state', 'pickup_zip',
         'delivery_business', 'delivery_city', 'delivery_state', 'delivery_zip',
         'price_per_mile', 'tarriff_price', 'carrier_price'
@@ -590,12 +590,14 @@ async function executeUpload() {
                 }
             }
             // Auto-calc logic
-            if (!newRow.price_per_mile && newRow.price && newRow.distance) {
-                newRow.price_per_mile = (parseFloat(newRow.price) / parseFloat(newRow.distance)).toFixed(2);
+            if (!newRow.price_per_mile && newRow.tarriff_price && newRow.distance) {
+                newRow.price_per_mile = (parseFloat(newRow.tarriff_price) / parseFloat(newRow.distance)).toFixed(2);
             }
             // Ensure numeric and sanitation
-            if (newRow.price) newRow.price = parseFloat(String(newRow.price).replace(/[$,]/g, ''));
             if (newRow.distance) newRow.distance = parseFloat(String(newRow.distance).replace(/,/g, ''));
+            if (newRow.price_per_mile) newRow.price_per_mile = parseFloat(String(newRow.price_per_mile).replace(/,/g, ''));
+            if (newRow.tarriff_price) newRow.tarriff_price = parseFloat(String(newRow.tarriff_price).replace(/[$,]/g, ''));
+            if (newRow.carrier_price) newRow.carrier_price = parseFloat(String(newRow.carrier_price).replace(/[$,]/g, ''));
 
             return newRow;
         });
