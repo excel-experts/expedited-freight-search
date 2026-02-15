@@ -178,6 +178,16 @@ function processResults() {
 
     allResults.forEach(record => {
         try {
+            // Calculate Price Per Mile
+            const distance = parseFloat(record.distance) || 0;
+            const carrierPrice = parseFloat(record.avg_carrier_price) || 0;
+
+            if (distance > 0) {
+                record.price_per_mile = (carrierPrice / distance).toFixed(2);
+            } else {
+                record.price_per_mile = "0.00";
+            }
+
             // Combine Pickup
             const pickupParts = [];
             if (record.pickup_city) pickupParts.push(record.pickup_city);
@@ -233,7 +243,7 @@ function displayResults() {
     let inopCarrierCount = 0;
 
     allResults.forEach(order => {
-        const price = parseFloat(order.avg_price) || 0;
+        const price = parseFloat(order.price_per_mile) || 0;
         const tarriff = parseFloat(order.avg_tarriff_price) || 0;
         const carrierVal = parseFloat(order.avg_carrier_price) || 0;
 
