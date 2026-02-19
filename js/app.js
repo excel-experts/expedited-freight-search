@@ -69,6 +69,7 @@ function initNav() {
             </div>
             <div class="nav-menu">
                 <a href="dashboard.html" class="nav-link ${currentPath.includes('dashboard.html') ? 'active' : ''}">Search Orders</a>
+                <a href="reports.html" class="nav-link ${currentPath.includes('reports.html') ? 'active' : ''}">Reports</a>
                 <!--<a href="admin-users.html" class="nav-link" id="userMgmtLink" style="display: none;">User Management</a>-->
                 <a href="admin-data.html" class="nav-link ${currentPath.includes('admin-data.html') ? 'active' : ''}" id="dataMgmtLink" style="display: none;">Data Management</a>
                 <span class="nav-user" id="userEmail"></span>

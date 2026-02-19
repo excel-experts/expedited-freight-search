@@ -60,10 +60,33 @@ async function init() {
     if (exportBtn) exportBtn.addEventListener('click', exportToCSV);
     if (prevBtn) prevBtn.addEventListener('click', () => changePage(-1));
     if (nextBtn) nextBtn.addEventListener('click', () => changePage(1));
+
+    // Check for URL parameters to auto-search
+    const params = new URLSearchParams(window.location.search);
+    let hasParams = false;
+
+    // List of fields to check
+    const fields = ['pickupCity', 'pickupState', 'deliveryCity', 'deliveryState'];
+
+    fields.forEach(field => {
+        const val = params.get(field);
+        if (val) {
+            const el = document.getElementById(field);
+            if (el) {
+                el.value = val;
+                hasParams = true;
+            }
+        }
+    });
+
+    if (hasParams) {
+        // Trigger search automatically
+        handleSearch(null); // Pass null or a mock event
+    }
 }
 
 async function handleSearch(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
 
     const pickupBusiness = document.getElementById('pickupBusiness').value.trim();
     const deliveryBusiness = document.getElementById('deliveryBusiness').value.trim();
@@ -115,10 +138,10 @@ async function handleSearch(e) {
             query_manual = query_manual.ilike('pickup_city', `%${pickupCity}%`);
         }
         if (pickupState) {
-            query_historical = query_historical.ilike('pickup_State', `%${pickupState}%`);
+            query_historical = query_historical.ilike('pickup_state', `%${pickupState}%`);
         }
         if (pickupZip) {
-            query_historical = query_historical.ilike('pickup_Zip', `%${pickupZip}%`);
+            query_historical = query_historical.ilike('pickup_zip', `%${pickupZip}%`);
         }
         if (deliveryCity) {
             query_historical = query_historical.ilike('delivery_city', `%${deliveryCity}%`);

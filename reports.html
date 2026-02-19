@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Expedited Freight</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <!-- Navigation injected by app.js -->
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Route Statistics</h1>
+            <p>View aggregated statistics for freight routes</p>
+        </div>
+
+        <div class="search-card">
+            <div class="report-selection">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="reportType" style="font-size: 1.1em; font-weight: bold;">Select Report</label>
+                    <select id="reportType" class="form-control"
+                        style="max-width: 300px; padding: 8px; font-size: 1em;">
+                        <option value="route_stats">Route Statistics</option>
+                        <option value="carrier_performance">Carrier Performance</option>
+                        <option value="customer_volume">Customer Volume</option>
+                    </select>
+                </div>
+
+                <div id="reportDescription" class="report-description"
+                    style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #0d47a1; border-radius: 4px; color: #555; line-height: 1.5;">
+                    <!-- Description populated by JS -->
+                </div>
+            </div>
+
+            <form id="searchForm" class="search-form">
+                <!-- Parameters for Route Statistics -->
+                <div id="params-route-stats" class="report-params">
+                    <h4 style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Report
+                        Parameters</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pickupCity">Pickup City</label>
+                            <input type="text" id="pickupCity" name="pickupCity" placeholder="e.g., Dallas">
+                        </div>
+                        <div class="form-group">
+                            <label for="pickupState">Pickup State</label>
+                            <input type="text" id="pickupState" name="pickupState" placeholder="e.g., TX">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deliveryCity">Delivery City</label>
+                            <input type="text" id="deliveryCity" name="deliveryCity" placeholder="e.g., Tulsa">
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryState">Delivery State</label>
+                            <input type="text" id="deliveryState" name="deliveryState" placeholder="e.g., OK">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">
+                        📊 Run Report
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="clearBtn">
+                        Reset Parameters
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="resultsSection" style="display: none;">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Routes</div>
+                    <div class="metric-value" id="totalRoutes">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total Orders</div>
+                    <div class="metric-value" id="totalOrders">0</div>
+                </div>
+                <!-- Price per Mile -->
+                <div class="metric-card">
+                    <div class="metric-label">Avg $/mi</div>
+                    <div class="metric-value" id="avgPricePerMile">$0</div>
+                </div>
+                <!-- Carrier Price -->
+                <div class="metric-card">
+                    <div class="metric-label">Avg Carrier Price</div>
+                    <div class="metric-value" id="avgCarrierPrice">$0</div>
+                </div>
+                <!-- Tarriff Price -->
+                <div class="metric-card">
+                    <div class="metric-label">Avg Tarriff Price</div>
+                    <div class="metric-value" id="avgTarriffPrice">$0</div>
+                </div>
+                <!-- Avg Distance -->
+                <div class="metric-card">
+                    <div class="metric-label">Avg Distance</div>
+                    <div class="metric-value" id="avgDistance">0 mi</div>
+                </div>
+            </div><!-- metrics-grid end-->
+
+            <div class="results-header">
+                <h2>Route Results</h2>
+                <button class="btn btn-secondary btn-sm" id="exportBtn">
+                    📥 Export to CSV
+                </button>
+            </div><!-- results-header end-->
+
+            <div class="table-container">
+                <table class="data-table" id="resultsTable">
+                    <thead id="resultsTableHead">
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div><!-- table-container end-->
+
+            <div class="pagination" id="pagination">
+                <button class="btn btn-secondary btn-sm" id="prevBtn" disabled>Previous</button>
+                <span id="pageInfo">Page 1</span>
+                <button class="btn btn-secondary btn-sm" id="nextBtn" disabled>Next</button>
+            </div>
+        </div><!-- results-section end-->
+
+        <div id="noResults" style="display: none;" class="no-results">
+            <p>No routes found matching your search criteria.</p>
+        </div><!-- no-results section end-->
+
+        <div id="loadingResults" style="display: none;" class="loading-message">
+            Loading route statistics...
+        </div><!-- loading-message end-->
+    </main>
+
+    <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/reports.js"></script>
+</body>
+
+</html>
