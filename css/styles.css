@@ -222,6 +222,25 @@ body {
     margin-top: 10px;
 }
 
+.radio-group {
+    display: flex;
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.radio-group input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+}
+
 /* ====================================
    Buttons
    ==================================== */

@@ -97,7 +97,7 @@ async function handleSearch(e) {
     const deliveryState = document.getElementById('deliveryState').value.trim();
     const deliveryZip = document.getElementById('deliveryZip').value.trim();
     const carrier = document.getElementById('carrier').value.trim();
-    const inopInfo = document.getElementById('inopInfo').value.trim();
+    const inopInfo = document.querySelector('input[name="inopInfo"]:checked').value;
 
     // At least one field must be filled
     if (!pickupBusiness && !deliveryBusiness && !pickupCity && !pickupZip && !deliveryCity && !deliveryZip && !carrier) {
